@@ -106,7 +106,7 @@ ${quick_takes}
 
 ### 4. Podcast Studio Prompt
 
-Defines the podcast format, characters, and style. Must include host definitions with ElevenLabs voice IDs.
+Defines the podcast format and dialog structure with specific speakers and their voice IDs. Must use exact JSON format.
 
 Example:
 ```json
@@ -120,24 +120,46 @@ Example:
         "name": "Alice Johnson",
         "role": "Host",
         "bio": "Tech journalist with 10 years of experience in AI research.",
-        "elevenlabs_voice_id": "21m00Tcm4TlvDq8ikWAM"
+        "elevenlabs_voice_id": "8N2ng9i2uiUWqstgmWlH"
       },
       {
         "name": "Bob Smith",
         "role": "Co-Host",
         "bio": "Software engineer and AI ethics advocate.",
-        "elevenlabs_voice_id": "AZnzlk1XvdvUeBnXmlld"
+        "elevenlabs_voice_id": "XpZeqQTuSFEd29ztEE53"
       }
     ],
-    "format": "Conversational discussion with:
-      - Opening introduction (30s)
-      - Main topic discussion (5-7min)
-      - Key points analysis (2-3min)
-      - Closing thoughts (1min)",
-    "style": "Professional but approachable, focus on making complex topics accessible"
+    "dialog": [
+      {
+        "speaker": "Alice Johnson",
+        "text": "Welcome back to TechTalk Weekly! This is Alice, and today we're diving into the future of AI in our daily lives. Joining me as always is my co-host, Bob. How are you, Bob?"
+      },
+      {
+        "speaker": "Bob Smith",
+        "text": "Hey Alice! I'm excited about this one. AI is already everywhere, but what's next?"
+      },
+      {
+        "speaker": "Alice Johnson",
+        "text": "Exactly! We've got smart assistants, self-driving cars, and even AI-generated art. But what happens when AI becomes even more integrated into our decision-making?"
+      },
+      {
+        "speaker": "Bob Smith",
+        "text": "That's the big question. Will it empower us, or will it take over jobs and make key decisions for us?"
+      },
+      {
+        "speaker": "Alice Johnson",
+        "text": "We'll explore that and more in today's episode. Let's get started!"
+      }
+    ]
   }
 }
 ```
+
+Important notes:
+1. The JSON structure must be exactly as shown above
+2. Each host must have a unique `elevenlabs_voice_id`
+3. Speaker names in dialog must match exactly with host names
+4. Dialog should flow naturally as a conversation
 
 ## Running the Application
 
