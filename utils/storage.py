@@ -66,7 +66,8 @@ class Storage:
                         id SERIAL PRIMARY KEY,
                         date TIMESTAMP NOT NULL,
                         content TEXT NOT NULL,
-                        articles JSONB NOT NULL
+                        articles JSONB NOT NULL,
+                        podcast_script JSONB
                     )
                 """)
 
@@ -140,12 +141,13 @@ class Storage:
         with self.get_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO news_newsletters (date, content, articles)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO news_newsletters (date, content, articles, podcast_script)
+                    VALUES (%s, %s, %s, %s)
                 """, (
                     newsletter['date'],
                     newsletter['content'],
-                    json.dumps(newsletter['articles'])
+                    json.dumps(newsletter['articles']),
+                    json.dumps(newsletter.get('podcast_script')) if newsletter.get('podcast_script') else None
                 ))
 
     def get_newsletters(self, search_term=None):
@@ -153,14 +155,14 @@ class Storage:
             with conn.cursor(cursor_factory=DictCursor) as cur:
                 if search_term:
                     cur.execute("""
-                        SELECT date, content, articles 
+                        SELECT date, content, articles, podcast_script
                         FROM news_newsletters 
                         WHERE content ILIKE %s 
                         ORDER BY date DESC
                     """, (f'%{search_term}%',))
                 else:
                     cur.execute("""
-                        SELECT date, content, articles 
+                        SELECT date, content, articles, podcast_script
                         FROM news_newsletters 
                         ORDER BY date DESC
                     """)

@@ -77,8 +77,11 @@ def generate_daily_newsletter():
     storage = Storage()
     newsletter_gen = NewsletterGenerator()
 
-    # Get template
+    # Get template and podcast settings
     template = storage.get_setting("newsletter_template")
+    create_podcast = storage.get_setting("create_podcast", "false") == "true"
+    podcast_prompt = storage.get_setting("podcast_studio_prompt", "")
+
     if not template:
         print("Missing newsletter template")
         return
@@ -89,7 +92,12 @@ def generate_daily_newsletter():
 
     if articles:
         try:
-            newsletter = newsletter_gen.generate_newsletter(articles, template)
+            newsletter = newsletter_gen.generate_newsletter(
+                articles, 
+                template,
+                create_podcast=create_podcast,
+                podcast_prompt=podcast_prompt
+            )
             storage.save_newsletter(newsletter)
             print(f"Generated newsletter with {len(articles)} articles")
         except Exception as e:

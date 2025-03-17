@@ -82,6 +82,11 @@
                     <i class="bi bi-envelope me-2"></i>Newsletters
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="podcasts-tab" data-bs-toggle="tab" data-bs-target="#podcasts" type="button" role="tab">
+                    <i class="bi bi-mic-fill me-2"></i>Podcasts
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -172,6 +177,16 @@
                             <input type="text" id="searchTerm" class="form-control" placeholder="Search newsletters" onkeyup="searchNewsletters()">
                         </div>
                         <div id="newslettersContainer"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="podcasts" role="tabpanel">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-mic-fill me-2"></i>Podcast Scripts</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="podcastsContainer"></div>
                     </div>
                 </div>
             </div>
@@ -311,13 +326,15 @@
             }
         }
 
-        // Load newsletters with markdown support and preview
+        // Load newsletters with podcast scripts
         async function loadNewsletters(search = '') {
             const response = await fetch(`/api/newsletters${search ? `?search=${search}` : ''}`);
             const newsletters = await response.json();
+
+            // Update newsletters container
             document.getElementById('newslettersContainer').innerHTML = newsletters.map((newsletter, index) => {
                 const content = marked.parse(newsletter.content);
-                const preview = content.split('\n').slice(0, 2).join('\n'); // Get first two lines
+                const preview = content.split('\n').slice(0, 2).join('\n');
                 return `
                     <div class="card mb-3">
                         <div class="card-header">
@@ -338,6 +355,44 @@
                     </div>
                 `;
             }).join('');
+
+            // Update podcasts container
+            document.getElementById('podcastsContainer').innerHTML = newsletters
+                .filter(newsletter => newsletter.podcast_script)
+                .map(newsletter => {
+                    const podcast = newsletter.podcast_script.podcast;
+                    return `
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">${podcast.title}</h5>
+                                    <span class="badge bg-primary">Episode ${podcast.episode}</span>
+                                </div>
+                                <small class="text-muted">${podcast.theme}</small>
+                            </div>
+                            <div class="card-body">
+                                <h6>Hosts:</h6>
+                                <div class="mb-3">
+                                    ${podcast.hosts.map(host => `
+                                        <div class="mb-2">
+                                            <strong>${host.name}</strong> (${host.role})
+                                            <p class="text-muted small mb-0">${host.bio}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <h6>Script:</h6>
+                                <div class="script-content">
+                                    ${podcast.dialog.map(line => `
+                                        <div class="mb-2">
+                                            <strong class="text-primary">${line.speaker}:</strong>
+                                            <p class="mb-0">${line.text}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<div class="alert alert-info">No podcast scripts available</div>';
         }
 
         // Show toast notification
