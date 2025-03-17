@@ -179,6 +179,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        // Format date to Stockholm timezone and YYYY-MM-DD HH:mm:ss format
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('sv-SE', { 
+                timeZone: 'Europe/Stockholm',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }).replace(',', '');
+        }
+
         // Load settings
         async function loadSettings() {
             const response = await fetch('/api/settings');
@@ -253,7 +268,7 @@
             const response = await fetch('/api/status');
             const messages = await response.json();
             document.getElementById('status').innerHTML = messages
-                .map(m => `<div class="mb-1"><small class="text-muted">${m.timestamp}</small>: ${m.message}</div>`)
+                .map(m => `<div class="mb-1"><small class="text-muted">${formatDate(m.timestamp)}</small>: ${m.message}</div>`)
                 .join('');
         }
 
@@ -267,7 +282,7 @@
                         <div class="card-body">
                             <h5 class="card-title">${article.title}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">
-                                <small>${new Date(article.processed_date).toLocaleString()}</small>
+                                <small>${formatDate(article.processed_date)}</small>
                             </h6>
                             <p class="card-text">${article.summary}</p>
                             <a href="${article.url}" target="_blank" class="btn btn-outline-primary btn-sm">
@@ -302,7 +317,7 @@
                 return `
                     <div class="card mb-3">
                         <div class="card-header">
-                            <i class="bi bi-calendar-event me-2"></i>${new Date(newsletter.date).toLocaleString()}
+                            <i class="bi bi-calendar-event me-2"></i>${formatDate(newsletter.date)}
                         </div>
                         <div class="card-body">
                             <div class="newsletter-preview markdown-content">
