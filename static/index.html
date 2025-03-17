@@ -104,6 +104,14 @@
                             <textarea id="newsletterTemplate" class="form-control" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="createPodcast">
+                                <label class="form-check-label" for="createPodcast">Generate Podcast</label>
+                            </div>
+                            <textarea id="podcastStudioPrompt" class="form-control" rows="3" 
+                                    placeholder="Enter instructions for podcast generation..."></textarea>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label">Newsletter Time</label>
                             <input type="time" id="newsletterTime" class="form-control">
                         </div>
@@ -196,6 +204,8 @@
             document.getElementById('summaryPrompt').value = settings.summary_prompt || '';
             document.getElementById('newsletterTemplate').value = settings.newsletter_template || '';
             document.getElementById('newsletterTime').value = settings.newsletter_time || '08:00';
+            document.getElementById('createPodcast').checked = settings.create_podcast === 'true';
+            document.getElementById('podcastStudioPrompt').value = settings.podcast_studio_prompt || '';
         }
 
         // Save settings
@@ -204,7 +214,9 @@
                 interest_prompt: document.getElementById('interestPrompt').value,
                 summary_prompt: document.getElementById('summaryPrompt').value,
                 newsletter_template: document.getElementById('newsletterTemplate').value,
-                newsletter_time: document.getElementById('newsletterTime').value
+                newsletter_time: document.getElementById('newsletterTime').value,
+                create_podcast: document.getElementById('createPodcast').checked.toString(),
+                podcast_studio_prompt: document.getElementById('podcastStudioPrompt').value
             };
 
             await fetch('/api/settings', {

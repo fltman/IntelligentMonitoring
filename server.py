@@ -78,7 +78,9 @@ def get_settings():
         "interest_prompt": storage.get_setting("interest_prompt"),
         "summary_prompt": storage.get_setting("summary_prompt"),
         "newsletter_template": storage.get_setting("newsletter_template"),
-        "newsletter_time": storage.get_setting("newsletter_time")
+        "newsletter_time": storage.get_setting("newsletter_time"),
+        "create_podcast": storage.get_setting("create_podcast", "false"),
+        "podcast_studio_prompt": storage.get_setting("podcast_studio_prompt", "")
     })
 
 @app.route('/api/settings', methods=['POST'])
