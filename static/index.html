@@ -2,88 +2,138 @@
 <html>
 <head>
     <title>News Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .status {
-            background: #f5f5f5;
-            padding: 10px;
-            margin: 10px 0;
+        .status-box {
             height: 200px;
             overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            border: 1px solid #dee2e6;
         }
-        .article {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin: 10px 0;
+        .article-card {
+            transition: transform 0.2s;
         }
-        .settings {
-            background: #f9f9f9;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        textarea {
-            width: 100%;
-            min-height: 100px;
+        .article-card:hover {
+            transform: translateY(-2px);
         }
     </style>
 </head>
-<body>
-    <h1>News Monitoring System</h1>
-    
-    <div class="settings">
-        <h2>Settings</h2>
-        <div>
-            <label>Interest Prompt:</label><br>
-            <textarea id="interestPrompt"></textarea>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-newspaper me-2"></i>News Monitor</a>
         </div>
-        <div>
-            <label>Summary Prompt:</label><br>
-            <textarea id="summaryPrompt"></textarea>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-gear-fill me-2"></i>Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Interest Prompt</label>
+                            <textarea id="interestPrompt" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Summary Prompt</label>
+                            <textarea id="summaryPrompt" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Newsletter Template</label>
+                            <textarea id="newsletterTemplate" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">URL Check Interval (hours)</label>
+                                <input type="number" id="checkInterval" class="form-control" min="1" max="24">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Newsletter Time</label>
+                                <input type="time" id="newsletterTime" class="form-control">
+                            </div>
+                        </div>
+                        <button onclick="saveSettings()" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-            <label>Newsletter Template:</label><br>
-            <textarea id="newsletterTemplate"></textarea>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-link-45deg me-2"></i>URL Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <input type="text" id="newUrl" class="form-control" placeholder="Enter URL">
+                            <button onclick="addUrl()" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-2"></i>Add URL
+                            </button>
+                        </div>
+                        <button onclick="startProcessing()" class="btn btn-success mb-3">
+                            <i class="bi bi-play-fill me-2"></i>Process URLs Now
+                        </button>
+                        <div id="urlList" class="list-group"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-            <label>URL Check Interval (hours):</label><br>
-            <input type="number" id="checkInterval" min="1" max="24">
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-activity me-2"></i>Processing Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="status" class="status-box"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-            <label>Newsletter Time:</label><br>
-            <input type="time" id="newsletterTime">
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-journal-text me-2"></i>Recent Articles</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="articles" class="row g-3"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button onclick="saveSettings()">Save Settings</button>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0"><i class="bi bi-envelope me-2"></i>Newsletters</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="searchTerm" class="form-control" placeholder="Search newsletters" onkeyup="searchNewsletters()">
+                        </div>
+                        <div id="newsletters"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div>
-        <h2>URL Management</h2>
-        <input type="text" id="newUrl" placeholder="Enter URL">
-        <button onclick="addUrl()">Add URL</button>
-        <button onclick="startProcessing()">Process URLs Now</button>
-        <div id="urlList"></div>
-    </div>
-
-    <div>
-        <h2>Processing Status</h2>
-        <div id="status" class="status"></div>
-    </div>
-
-    <div>
-        <h2>Recent Articles</h2>
-        <div id="articles"></div>
-    </div>
-
-    <div>
-        <h2>Newsletters</h2>
-        <input type="text" id="searchTerm" onkeyup="searchNewsletters()" placeholder="Search newsletters">
-        <div id="newsletters"></div>
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Load settings
         async function loadSettings() {
@@ -112,7 +162,7 @@
                 body: JSON.stringify(settings)
             });
 
-            alert('Settings saved!');
+            showToast('Settings saved successfully!');
         }
 
         // URL management
@@ -121,7 +171,12 @@
             const urls = await response.json();
             const urlList = document.getElementById('urlList');
             urlList.innerHTML = urls.map(url => 
-                `<div>${url} <button onclick="removeUrl('${url}')">Remove</button></div>`
+                `<div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-break">${url}</span>
+                    <button onclick="removeUrl('${url}')" class="btn btn-danger btn-sm">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>`
             ).join('');
         }
 
@@ -134,16 +189,19 @@
             });
             document.getElementById('newUrl').value = '';
             loadUrls();
+            showToast('URL added successfully!');
         }
 
         async function removeUrl(url) {
             await fetch(`/api/urls/${encodeURIComponent(url)}`, {method: 'DELETE'});
             loadUrls();
+            showToast('URL removed successfully!');
         }
 
         // Processing
         async function startProcessing() {
             await fetch('/api/process', {method: 'POST'});
+            showToast('Processing started!');
         }
 
         // Status updates
@@ -151,7 +209,7 @@
             const response = await fetch('/api/status');
             const messages = await response.json();
             document.getElementById('status').innerHTML = messages
-                .map(m => `<div>${m.timestamp}: ${m.message}</div>`)
+                .map(m => `<div class="mb-1"><small class="text-muted">${m.timestamp}</small>: ${m.message}</div>`)
                 .join('');
         }
 
@@ -160,11 +218,19 @@
             const response = await fetch('/api/articles');
             const articles = await response.json();
             document.getElementById('articles').innerHTML = articles.map(article => `
-                <div class="article">
-                    <h3>${article.title}</h3>
-                    <p>Source: <a href="${article.url}" target="_blank">${article.url}</a></p>
-                    <p>Processed: ${article.processed_date}</p>
-                    <p>${article.summary}</p>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 article-card">
+                        <div class="card-body">
+                            <h5 class="card-title">${article.title}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <small>${new Date(article.processed_date).toLocaleString()}</small>
+                            </h6>
+                            <p class="card-text">${article.summary}</p>
+                            <a href="${article.url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>Read More
+                            </a>
+                        </div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -174,11 +240,32 @@
             const response = await fetch(`/api/newsletters${search ? `?search=${search}` : ''}`);
             const newsletters = await response.json();
             document.getElementById('newsletters').innerHTML = newsletters.map(newsletter => `
-                <div class="article">
-                    <h3>Newsletter - ${newsletter.date}</h3>
-                    <pre>${newsletter.content}</pre>
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <i class="bi bi-calendar-event me-2"></i>${new Date(newsletter.date).toLocaleString()}
+                    </div>
+                    <div class="card-body">
+                        <pre class="card-text">${newsletter.content}</pre>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            toast.innerHTML = `
+                <div class="toast show" role="alert">
+                    <div class="toast-header">
+                        <strong class="me-auto">Notification</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
 
         let searchTimeout;
