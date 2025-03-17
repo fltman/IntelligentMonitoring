@@ -6,10 +6,9 @@ import json
 from urllib.parse import urljoin, urlparse
 import re
 from bs4 import BeautifulSoup
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class ArticleProcessor:
-
     def __init__(self):
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
         # do not change this unless explicitly requested by the user
@@ -89,24 +88,21 @@ class ArticleProcessor:
         try:
             response = self.openai.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role":
-                        "system",
-                        "content":
-                        "You are an article relevance checker. "
-                        "Determine if the article matches the given interests. "
-                        "Respond with JSON in this format: "
-                        "{'relevant': boolean, 'reason': string}"
-                    },
-                    {
-                        "role":
-                        "user",
-                        "content":
-                        f"Interest criteria:\n{interest_prompt}\n\n"
-                        f"Article content:\n{content[:4000]}"
-                    }  # Limit content length
-                ],
+                messages=[{
+                    "role":
+                    "system",
+                    "content":
+                    "You are a relevance checker. "
+                    "Determine if the article matches the given interests. "
+                    "Respond with JSON in this format: "
+                    "{'relevant': boolean, 'reason': string}"
+                }, {
+                    "role":
+                    "user",
+                    "content":
+                    f"Interest criteria:\n{interest_prompt}\n\n"
+                    f"Article content:\n{content[:4000]}"
+                }],
                 response_format={"type": "json_object"})
             result = json.loads(response.choices[0].message.content)
             return result["relevant"], result["reason"]
@@ -139,6 +135,38 @@ class ArticleProcessor:
         except Exception as e:
             raise Exception(f"Failed to summarize article: {str(e)}")
 
+    def process_single_article(self, article_url, interest_prompt, summary_prompt, status_callback=None):
+        """Process a single article URL"""
+        try:
+            if status_callback:
+                status_callback(f"Kontrollerar artikel: {article_url}")
+            print(f"Checking article: {article_url}")
+
+            article_content, _ = self.fetch_article(article_url)  # Ignore nested links
+            relevant, reason = self.check_relevance(article_content, interest_prompt)
+
+            if relevant:
+                title, summary = self.summarize_article(article_content, summary_prompt)
+                result = {
+                    "url": article_url,
+                    "title": title,
+                    "summary": summary,
+                    "processed_date": datetime.now().isoformat(),
+                    "content": article_content
+                }
+                msg = f"Hittade relevant artikel: {title}"
+                if status_callback:
+                    status_callback(msg)
+                print(f"Found relevant article: {title}")
+                return result
+            return None
+        except Exception as e:
+            msg = f"Fel vid bearbetning av artikel {article_url}: {str(e)}"
+            if status_callback:
+                status_callback(msg)
+            print(f"Error processing article {article_url}: {str(e)}")
+            return None
+
     def process_article(self, url, interest_prompt, summary_prompt,
                        status_callback=None):
         """Process an article through the complete pipeline"""
@@ -154,63 +182,40 @@ class ArticleProcessor:
         if relevant:
             title, summary = self.summarize_article(content, summary_prompt)
             processed_articles.append({
-                "url":
-                url,
-                "title":
-                title,
-                "summary":
-                summary,
-                "processed_date":
-                datetime.now().isoformat(),
-                "content":
-                content
+                "url": url,
+                "title": title,
+                "summary": summary,
+                "processed_date": datetime.now().isoformat(),
+                "content": content
             })
             msg = f"Hittade relevant innehåll på huvudsidan: {title}"
             if status_callback:
                 status_callback(msg)
             print(f"Found relevant content on main page: {title}")
 
-        # Process extracted article links
+        # Process extracted article links in parallel
         if article_links:
             msg = f"Hittade {len(article_links)} potentiella artikellänkar"
             if status_callback:
                 status_callback(msg)
             print(f"Found {len(article_links)} potential article links")
 
-            for article_url in article_links:
-                try:
-                    if status_callback:
-                        status_callback(f"Kontrollerar artikel: {article_url}")
-                    print(f"Checking article: {article_url}")
-                    article_content, _ = self.fetch_article(
-                        article_url)  # Ignore nested links
-                    relevant, reason = self.check_relevance(
-                        article_content, interest_prompt)
+            # Process articles in parallel with max 5 workers
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                future_to_url = {
+                    executor.submit(
+                        self.process_single_article,
+                        article_url,
+                        interest_prompt,
+                        summary_prompt,
+                        status_callback
+                    ): article_url
+                    for article_url in article_links
+                }
 
-                    if relevant:
-                        title, summary = self.summarize_article(
-                            article_content, summary_prompt)
-                        processed_articles.append({
-                            "url":
-                            article_url,
-                            "title":
-                            title,
-                            "summary":
-                            summary,
-                            "processed_date":
-                            datetime.now().isoformat(),
-                            "content":
-                            article_content
-                        })
-                        msg = f"Hittade relevant artikel: {title}"
-                        if status_callback:
-                            status_callback(msg)
-                        print(f"Found relevant article: {title}")
-                except Exception as e:
-                    msg = f"Fel vid bearbetning av artikel {article_url}: {str(e)}"
-                    if status_callback:
-                        status_callback(msg)
-                    print(f"Error processing article {article_url}: {str(e)}")
-                    continue
+                for future in as_completed(future_to_url):
+                    result = future.result()
+                    if result:
+                        processed_articles.append(result)
 
         return processed_articles
