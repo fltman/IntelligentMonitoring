@@ -1,0 +1,92 @@
+172.31.128.64 - - [17/Mar/2025 10:37:08] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:08] "GET /api/urls HTTP/1.1" 200 -
+[2025-03-17 10:37:08,885] ERROR in app: Exception on /api/newsletters [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/server.py", line 68, in get_newsletters
+    return jsonify(storage.get_newsletters(search if search else None))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/utils/storage.py", line 164, in get_newsletters
+    cur.execute("""
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/psycopg2/extras.py", line 146, in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "audio_url" does not exist
+LINE 2: ...ELECT id, date, content, articles, podcast_script, audio_url
+                                                              ^
+
+172.31.128.64 - - [17/Mar/2025 10:37:08] "GET /api/newsletters HTTP/1.1" 500 -
+172.31.128.64 - - [17/Mar/2025 10:37:09] "GET /api/articles HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:09] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:09] "GET / HTTP/1.1" 304 -
+172.31.128.64 - - [17/Mar/2025 10:37:09] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:10] "GET /api/settings HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:10] "GET /api/urls HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:10] "GET /api/articles HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:10] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:11] "GET /api/status HTTP/1.1" 200 -
+[2025-03-17 10:37:11,178] ERROR in app: Exception on /api/newsletters [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/server.py", line 68, in get_newsletters
+    return jsonify(storage.get_newsletters(search if search else None))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/utils/storage.py", line 164, in get_newsletters
+    cur.execute("""
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/psycopg2/extras.py", line 146, in execute
+    return super().execute(query, vars)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "audio_url" does not exist
+LINE 2: ...ELECT id, date, content, articles, podcast_script, audio_url
+                                                              ^
+
+172.31.128.64 - - [17/Mar/2025 10:37:11] "GET /api/newsletters HTTP/1.1" 500 -
+172.31.128.64 - - [17/Mar/2025 10:37:11] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:11] "GET /api/settings HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:11] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:13] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:13] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:13] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:13] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:14] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:15] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:15] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:15] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:16] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:16] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:17] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:18] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:18] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:18] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:19] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:19] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:20] "GET /api/status HTTP/1.1" 200 -
+172.31.128.64 - - [17/Mar/2025 10:37:20] "GET /api/status HTTP/1.1" 200 -
