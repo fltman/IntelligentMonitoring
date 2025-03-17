@@ -6,7 +6,7 @@ from utils.article_processor import ArticleProcessor
 from utils.storage import Storage
 from utils.newsletter import NewsletterGenerator
 
-def process_urls():
+def process_urls(status_callback=None):
     """Process all URLs and check for new articles"""
     storage = Storage()
     processor = ArticleProcessor()
@@ -17,11 +17,16 @@ def process_urls():
     summary_prompt = storage.get_setting("summary_prompt")
 
     if not interest_prompt or not summary_prompt:
-        print("Missing prompts configuration")
+        error_msg = "Missing prompts configuration"
+        if status_callback:
+            status_callback(error_msg)
+        print(error_msg)
         return
 
     for url in urls:
         try:
+            if status_callback:
+                status_callback(f"Processing source: {url}")
             print(f"\nProcessing source: {url}")
             # Process main page and its article links
             articles = processor.process_article(url, interest_prompt, summary_prompt)
@@ -31,15 +36,24 @@ def process_urls():
                 with storage.conn.cursor() as cur:
                     cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (article["url"],))
                     if cur.fetchone():
-                        print(f"Skipping duplicate article: {article['url']}")
+                        msg = f"Skipping duplicate article: {article['url']}"
+                        if status_callback:
+                            status_callback(msg)
+                        print(msg)
                         continue
 
                 # Save new article
                 storage.save_article(article)
-                print(f"Saved new article: {article['title']}")
+                msg = f"Found new article: {article['title']}"
+                if status_callback:
+                    status_callback(msg)
+                print(msg)
 
         except Exception as e:
-            print(f"Error processing URL {url}: {str(e)}")
+            error_msg = f"Error processing URL {url}: {str(e)}"
+            if status_callback:
+                status_callback(error_msg)
+            print(error_msg)
             continue
 
 def generate_daily_newsletter():

@@ -7,7 +7,9 @@ from urllib.parse import urljoin, urlparse
 import re
 from bs4 import BeautifulSoup
 
+
 class ArticleProcessor:
+
     def __init__(self):
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
         # do not change this unless explicitly requested by the user
@@ -40,9 +42,10 @@ class ArticleProcessor:
             soup = BeautifulSoup(html_content, 'html.parser')
 
             # Get links from common article containers
-            article_containers = soup.find_all(['article', 'div', 'section'], 
-                class_=lambda x: x and any(term in x.lower() 
-                    for term in ['article', 'post', 'story', 'news']))
+            article_containers = soup.find_all(
+                ['article', 'div', 'section'],
+                class_=lambda x: x and any(term in x.lower(
+                ) for term in ['article', 'post', 'story', 'news']))
 
             # Extract links from article containers
             for container in article_containers:
@@ -50,8 +53,8 @@ class ArticleProcessor:
                     links.add(a_tag['href'])
 
             # Also check for links in the main content area
-            main_content = soup.find(['main', 'div'], 
-                class_=lambda x: x and 'content' in x.lower())
+            main_content = soup.find(
+                ['main', 'div'], class_=lambda x: x and 'content' in x.lower())
             if main_content:
                 for a_tag in main_content.find_all('a', href=True):
                     links.add(a_tag['href'])
@@ -64,13 +67,16 @@ class ArticleProcessor:
                 parsed = urlparse(absolute_url)
 
                 # Skip if not same domain or obvious non-article URLs
-                if not parsed.netloc or any(skip in parsed.path.lower() 
-                    for skip in ['/tag/', '/category/', '/author/', '/search/', '/page/']):
+                if not parsed.netloc or any(
+                        skip in parsed.path.lower() for skip in
+                    ['/tag/', '/category/', '/author/', '/search/', '/page/']):
                     continue
 
                 # Include if likely an article URL
-                if any(pattern in parsed.path.lower() 
-                    for pattern in ['/article/', '/news/', '/story/', '/post/', '/2024/', '/2025/']):
+                if any(pattern in parsed.path.lower() for pattern in [
+                        '/article/', '/news/', '/story/', '/post/', '/2024/',
+                        '/2025/'
+                ]):
                     cleaned_links.append(absolute_url)
 
             return list(set(cleaned_links))  # Remove any remaining duplicates
@@ -82,17 +88,26 @@ class ArticleProcessor:
         """Check if the article is relevant based on interest prompt"""
         try:
             response = self.openai.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are an article relevance checker. "
-                     "Determine if the article matches the given interests. "
-                     "Respond with JSON in this format: "
-                     "{'relevant': boolean, 'reason': string}"},
-                    {"role": "user", "content": f"Interest criteria:\n{interest_prompt}\n\n"
-                     f"Article content:\n{content[:4000]}"}  # Limit content length
+                    {
+                        "role":
+                        "system",
+                        "content":
+                        "You are an article relevance checker. "
+                        "Determine if the article matches the given interests. "
+                        "Respond with JSON in this format: "
+                        "{'relevant': boolean, 'reason': string}"
+                    },
+                    {
+                        "role":
+                        "user",
+                        "content":
+                        f"Interest criteria:\n{interest_prompt}\n\n"
+                        f"Article content:\n{content[:4000]}"
+                    }  # Limit content length
                 ],
-                response_format={"type": "json_object"}
-            )
+                response_format={"type": "json_object"})
             result = json.loads(response.choices[0].message.content)
             return result["relevant"], result["reason"]
         except Exception as e:
@@ -102,17 +117,23 @@ class ArticleProcessor:
         """Summarize the article based on summary prompt"""
         try:
             response = self.openai.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are an article summarizer. "
-                     "Summarize the article according to the given instructions. "
-                     "Respond with JSON in this format: "
-                     "{'title': string, 'summary': string}"},
-                    {"role": "user", "content": f"Summary instructions:\n{summary_prompt}\n\n"
-                     f"Article content:\n{content[:4000]}"}
-                ],
-                response_format={"type": "json_object"}
-            )
+                model="gpt-4o-mini",
+                messages=[{
+                    "role":
+                    "system",
+                    "content":
+                    "You are an article summarizer. "
+                    "Summarize the article according to the given instructions. "
+                    "Respond with JSON in this format: "
+                    "{'title': string, 'summary': string}"
+                }, {
+                    "role":
+                    "user",
+                    "content":
+                    f"Summary instructions:\n{summary_prompt}\n\n"
+                    f"Article content:\n{content[:4000]}"
+                }],
+                response_format={"type": "json_object"})
             result = json.loads(response.choices[0].message.content)
             return result["title"], result["summary"]
         except Exception as e:
@@ -130,11 +151,16 @@ class ArticleProcessor:
         if relevant:
             title, summary = self.summarize_article(content, summary_prompt)
             processed_articles.append({
-                "url": url,
-                "title": title,
-                "summary": summary,
-                "processed_date": datetime.now().isoformat(),
-                "content": content
+                "url":
+                url,
+                "title":
+                title,
+                "summary":
+                summary,
+                "processed_date":
+                datetime.now().isoformat(),
+                "content":
+                content
             })
             print(f"Found relevant content on main page: {title}")
 
@@ -143,17 +169,25 @@ class ArticleProcessor:
         for article_url in article_links:
             try:
                 print(f"Checking article: {article_url}")
-                article_content, _ = self.fetch_article(article_url)  # Ignore nested links
-                relevant, reason = self.check_relevance(article_content, interest_prompt)
+                article_content, _ = self.fetch_article(
+                    article_url)  # Ignore nested links
+                relevant, reason = self.check_relevance(
+                    article_content, interest_prompt)
 
                 if relevant:
-                    title, summary = self.summarize_article(article_content, summary_prompt)
+                    title, summary = self.summarize_article(
+                        article_content, summary_prompt)
                     processed_articles.append({
-                        "url": article_url,
-                        "title": title,
-                        "summary": summary,
-                        "processed_date": datetime.now().isoformat(),
-                        "content": article_content
+                        "url":
+                        article_url,
+                        "title":
+                        title,
+                        "summary":
+                        summary,
+                        "processed_date":
+                        datetime.now().isoformat(),
+                        "content":
+                        article_content
                     })
                     print(f"Found relevant article: {title}")
             except Exception as e:

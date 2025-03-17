@@ -3,7 +3,9 @@ from openai import OpenAI
 import os
 import json
 
+
 class NewsletterGenerator:
+
     def __init__(self):
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
         # do not change this unless explicitly requested by the user
@@ -23,18 +25,24 @@ class NewsletterGenerator:
 
             # Use OpenAI to generate the newsletter
             response = self.openai.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are a newsletter generator. "
-                     "Create a newsletter using the provided template and articles. "
-                     "The newsletter should be well-structured and engaging."},
-                    {"role": "user", "content": f"Template:\n{template}\n\n"
-                     f"Articles:\n{json.dumps(articles_data, indent=2)}"}
-                ]
-            )
-            
+                model="gpt-4o-mini",
+                messages=[{
+                    "role":
+                    "system",
+                    "content":
+                    "You are a newsletter generator. "
+                    "Create a newsletter using the provided template and articles. "
+                    "The newsletter should be well-structured and engaging."
+                }, {
+                    "role":
+                    "user",
+                    "content":
+                    f"Template:\n{template}\n\n"
+                    f"Articles:\n{json.dumps(articles_data, indent=2)}"
+                }])
+
             newsletter_content = response.choices[0].message.content
-            
+
             return {
                 "date": datetime.now().isoformat(),
                 "content": newsletter_content,
