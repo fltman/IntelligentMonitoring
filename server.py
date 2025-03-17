@@ -30,7 +30,6 @@ def add_status_message(message):
         if len(status_messages) > 100:
             status_messages.pop(0)
 
-# Serve static files
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
@@ -110,42 +109,52 @@ ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech"
 def generate_audio():
     try:
         podcast_index = request.json.get('podcast_index')
+        print(f"Generating audio for podcast index: {podcast_index}")
 
         # Get the most recent newsletter with a podcast script
         newsletters = storage.get_newsletters()
         podcasts = [n for n in newsletters if n.get('podcast_script')]
 
+        print(f"Found {len(podcasts)} podcasts with scripts")
+
         if podcast_index >= len(podcasts):
+            print(f"Podcast index {podcast_index} out of range")
             return jsonify({"error": "Podcast not found"}), 404
 
         podcast = podcasts[podcast_index]['podcast_script']['podcast']
+        print(f"Processing podcast: {podcast['title']}")
 
         # Generate audio for each line of dialog
         audio_parts = []
-        for line in podcast['dialog']:
-            response = requests.post(ELEVENLABS_API_URL,
-                                     headers={
-                                         'Authorization':
-                                         f'Bearer {ELEVENLABS_API_KEY}',
-                                         'Content-Type': 'application/json'
-                                     },
-                                     json={
-                                         'text': line['text'],
-                                         'model_id': 'eleven_multilingual_v2',
-                                         'voice_settings': {
-                                             'stability': 0.5,
-                                             'similarity_boost': 0.5
-                                         }
-                                     },
-                                     stream=True)
+        for i, line in enumerate(podcast['dialog']):
+            print(f"Generating audio for line {i+1}/{len(podcast['dialog'])}")
+            try:
+                response = requests.post(
+                    ELEVENLABS_API_URL,
+                    headers={
+                        'Authorization': f'Bearer {ELEVENLABS_API_KEY}',
+                        'Content-Type': 'application/json'
+                    },
+                    json={
+                        'text': line['text'],
+                        'model_id': 'eleven_multilingual_v2',
+                        'voice_settings': {
+                            'stability': 0.5,
+                            'similarity_boost': 0.5
+                        }
+                    },
+                    stream=True
+                )
 
-            if response.status_code != 200:
-                return jsonify({"error": "Failed to generate audio"}), 500
+                print(f"Elevenlabs API response status: {response.status_code}")
+                if response.status_code != 200:
+                    print(f"API Error response: {response.text}")
+                    return jsonify({"error": f"Failed to generate audio: {response.text}"}), 500
 
-            audio_parts.append(response.content)
-
-        # TODO: In a future update, we can combine audio parts and add effects
-        # For now, we'll just use the first part as a demo
+                audio_parts.append(response.content)
+            except Exception as e:
+                print(f"Error generating audio for line {i+1}: {str(e)}")
+                return jsonify({"error": f"Error generating audio for line {i+1}: {str(e)}"}), 500
 
         # Save the audio file
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -153,10 +162,20 @@ def generate_audio():
         audio_path = os.path.join(app.static_folder, 'audio', audio_filename)
 
         # Ensure audio directory exists
-        os.makedirs(os.path.join(app.static_folder, 'audio'), exist_ok=True)
+        try:
+            os.makedirs(os.path.join(app.static_folder, 'audio'), exist_ok=True)
+            print(f"Created audio directory at {os.path.join(app.static_folder, 'audio')}")
+        except Exception as e:
+            print(f"Error creating audio directory: {str(e)}")
+            return jsonify({"error": f"Failed to create audio directory: {str(e)}"}), 500
 
-        with open(audio_path, 'wb') as f:
-            f.write(audio_parts[0])
+        try:
+            with open(audio_path, 'wb') as f:
+                f.write(audio_parts[0])
+            print(f"Saved audio file to {audio_path}")
+        except Exception as e:
+            print(f"Error saving audio file: {str(e)}")
+            return jsonify({"error": f"Failed to save audio file: {str(e)}"}), 500
 
         return jsonify({
             "success": True,
@@ -164,6 +183,7 @@ def generate_audio():
         })
 
     except Exception as e:
+        print(f"Unexpected error in generate_audio: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
