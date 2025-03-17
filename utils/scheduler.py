@@ -22,17 +22,21 @@ def process_urls():
 
     for url in urls:
         try:
-            # Check if article already exists
-            with storage.conn.cursor() as cur:
-                cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (url,))
-                if cur.fetchone():
-                    continue
+            # Process main page and its article links
+            articles = processor.process_article(url, interest_prompt, summary_prompt)
 
-            # Process new article
-            article = processor.process_article(url, interest_prompt, summary_prompt)
-            if article:
+            for article in articles:
+                # Check if article already exists
+                with storage.conn.cursor() as cur:
+                    cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (article["url"],))
+                    if cur.fetchone():
+                        print(f"Article already exists: {article['url']}")
+                        continue
+
+                # Save new article
                 storage.save_article(article)
-                print(f"Processed new article: {article['title']}")
+                print(f"Saved new article: {article['title']}")
+
         except Exception as e:
             print(f"Error processing URL {url}: {str(e)}")
             continue
