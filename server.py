@@ -175,8 +175,10 @@ def generate_audio():
             return jsonify({"error": f"Failed to create audio directory: {str(e)}"}), 500
 
         try:
+            # Concatenate all audio parts
             with open(audio_path, 'wb') as f:
-                f.write(audio_parts[0])
+                for part in audio_parts:
+                    f.write(part)
             print(f"Saved audio file to {audio_path}")
         except Exception as e:
             print(f"Error saving audio file: {str(e)}")
