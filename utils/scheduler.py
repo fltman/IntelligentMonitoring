@@ -60,20 +60,38 @@ def generate_daily_newsletter():
         except Exception as e:
             print(f"Error generating newsletter: {str(e)}")
 
-def run_scheduler():
-    """Run the scheduler continuously"""
-    # Process URLs every hour
-    schedule.every(1).hours.do(process_urls)
+# Store the current scheduler thread to be able to stop it
+current_scheduler_thread = None
 
-    # Generate newsletter at 8 AM daily
-    schedule.every().day.at("08:00").do(generate_daily_newsletter)
+def run_scheduler(check_interval, newsletter_time):
+    """Run the scheduler continuously"""
+    # Clear any existing jobs
+    schedule.clear()
+
+    # Process URLs at specified interval
+    schedule.every(check_interval).hours.do(process_urls)
+
+    # Generate newsletter at specified time
+    schedule.every().day.at(newsletter_time).do(generate_daily_newsletter)
 
     while True:
         schedule.run_pending()
         time.sleep(60)
 
-def start_scheduler():
-    """Start the scheduler in a background thread"""
-    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
-    scheduler_thread.start()
-    print("Started background scheduler")
+def start_scheduler(check_interval=1, newsletter_time="08:00"):
+    """Start or restart the scheduler with new settings"""
+    global current_scheduler_thread
+
+    # Stop existing scheduler if running
+    if current_scheduler_thread and current_scheduler_thread.is_alive():
+        schedule.clear()
+        current_scheduler_thread = None
+
+    # Start new scheduler thread
+    current_scheduler_thread = threading.Thread(
+        target=run_scheduler,
+        args=(check_interval, newsletter_time),
+        daemon=True
+    )
+    current_scheduler_thread.start()
+    print(f"Started scheduler: checking URLs every {check_interval} hours, newsletter at {newsletter_time}")

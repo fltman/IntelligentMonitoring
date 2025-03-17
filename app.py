@@ -4,7 +4,7 @@ from datetime import datetime
 from utils.article_processor import ArticleProcessor
 from utils.storage import Storage
 from utils.newsletter import NewsletterGenerator
-from utils.scheduler import start_scheduler
+from utils.scheduler import start_scheduler, process_urls, generate_daily_newsletter
 
 # Initialize storage and processors
 storage = Storage()
@@ -17,34 +17,54 @@ def main():
     # Sidebar for configuration
     with st.sidebar:
         st.header("Configuration")
-        
+
         # Interest prompt
         interest_prompt = st.text_area(
             "Interest Prompt",
             value=storage.get_setting("interest_prompt", ""),
             help="Describe what kind of articles interest you"
         )
-        
+
         # Summary prompt
         summary_prompt = st.text_area(
             "Summary Prompt",
             value=storage.get_setting("summary_prompt", ""),
             help="Define how articles should be summarized"
         )
-        
+
         # Newsletter template
         newsletter_template = st.text_area(
             "Newsletter Template",
             value=storage.get_setting("newsletter_template", ""),
             help="Define the structure of your newsletter"
         )
-        
+
+        # Scheduler settings
+        st.subheader("Scheduler Settings")
+        url_check_interval = st.number_input(
+            "URL Check Interval (hours)",
+            min_value=1,
+            max_value=24,
+            value=int(storage.get_setting("url_check_interval", "1")),
+            help="How often to check URLs for new content"
+        )
+
+        newsletter_time = st.time_input(
+            "Newsletter Generation Time",
+            datetime.strptime(storage.get_setting("newsletter_time", "08:00"), "%H:%M").time(),
+            help="When to generate the daily newsletter"
+        )
+
         # Save settings
         if st.button("Save Configuration"):
             storage.save_setting("interest_prompt", interest_prompt)
             storage.save_setting("summary_prompt", summary_prompt)
             storage.save_setting("newsletter_template", newsletter_template)
+            storage.save_setting("url_check_interval", str(url_check_interval))
+            storage.save_setting("newsletter_time", newsletter_time.strftime("%H:%M"))
             st.success("Configuration saved!")
+            # Restart scheduler with new settings
+            start_scheduler(url_check_interval, newsletter_time.strftime("%H:%M"))
 
     # Main content area
     tab1, tab2, tab3 = st.tabs(["URL Management", "Recent Articles", "Newsletter Archive"])
@@ -52,7 +72,23 @@ def main():
     # URL Management tab
     with tab1:
         st.header("URL Management")
-        
+
+        # Manual run buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Check URLs Now"):
+                with st.spinner("Checking URLs for new content..."):
+                    process_urls()
+                st.success("URL check completed!")
+
+        with col2:
+            if st.button("Generate Newsletter Now"):
+                with st.spinner("Generating newsletter..."):
+                    generate_daily_newsletter()
+                st.success("Newsletter generated!")
+
+        st.divider()
+
         # Add new URL
         new_url = st.text_input("Add New URL")
         if st.button("Add URL"):
@@ -61,7 +97,7 @@ def main():
                     st.success("URL added successfully!")
                 else:
                     st.error("URL already exists or is invalid")
-        
+
         # Display existing URLs
         urls = storage.get_urls()
         if urls:
@@ -79,7 +115,7 @@ def main():
     with tab2:
         st.header("Recent Articles")
         articles = storage.get_recent_articles()
-        
+
         if not articles:
             st.info("No recent articles found")
         else:
@@ -93,10 +129,10 @@ def main():
     # Newsletter Archive tab
     with tab3:
         st.header("Newsletter Archive")
-        
+
         # Search functionality
         search_term = st.text_input("Search newsletters")
-        
+
         newsletters = storage.get_newsletters(search_term)
         if not newsletters:
             st.info("No newsletters found")
@@ -106,6 +142,10 @@ def main():
                     st.write(newsletter['content'])
 
 if __name__ == "__main__":
+    # Get initial scheduler settings
+    url_check_interval = int(storage.get_setting("url_check_interval", "1"))
+    newsletter_time = storage.get_setting("newsletter_time", "08:00")
+
     # Start the scheduler in the background
-    start_scheduler()
+    start_scheduler(url_check_interval, newsletter_time)
     main()
