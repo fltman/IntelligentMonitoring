@@ -51,6 +51,9 @@
         .newsletter-preview {
             margin-bottom: 1rem;
         }
+        .audio-player {
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -433,9 +436,17 @@
                                             onclick="togglePodcast(${index})">
                                         <i class="bi bi-chevron-down me-1"></i>Show Script
                                     </button>
-                                    <button class="btn btn-success btn-sm" onclick="generateAudio(${index})">
-                                        <i class="bi bi-volume-up me-1"></i>Generate Audio
-                                    </button>
+                                    ${newsletter.audio_url ? 
+                                        `<div class="audio-player">
+                                            <audio controls class="w-100">
+                                                <source src="${newsletter.audio_url}" type="audio/mpeg">
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                        </div>` :
+                                        `<button class="btn btn-success btn-sm" onclick="generateAudio(${index})">
+                                            <i class="bi bi-volume-up me-1"></i>Generate Audio
+                                        </button>`
+                                    }
                                 </div>
                                 <div class="podcast-content" id="podcast-content-${index}" style="display:none">
                                     <h6>Hosts:</h6>

@@ -178,3 +178,29 @@ class Storage:
                     ORDER BY processed_date DESC
                 """, (since_date,))
                 return [dict(row) for row in cur.fetchall()]
+
+    def update_newsletter_audio(self, newsletter_id, audio_url):
+        """Update the newsletter with generated audio URL"""
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                # First add the audio_url column if it doesn't exist
+                cur.execute("""
+                    DO $$ 
+                    BEGIN 
+                        IF NOT EXISTS (
+                            SELECT column_name 
+                            FROM information_schema.columns 
+                            WHERE table_name='news_newsletters' 
+                            AND column_name='audio_url'
+                        ) THEN
+                            ALTER TABLE news_newsletters ADD COLUMN audio_url TEXT;
+                        END IF;
+                    END $$;
+                """)
+
+                # Update the newsletter with the audio URL
+                cur.execute("""
+                    UPDATE news_newsletters 
+                    SET audio_url = %s 
+                    WHERE id = %s
+                """, (audio_url, newsletter_id))

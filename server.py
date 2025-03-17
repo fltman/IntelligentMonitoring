@@ -108,7 +108,12 @@ def save_settings():
     return jsonify({"success": True})
 
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
-ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM"  # Using "Rachel" voice
+# Voice IDs for different speakers
+VOICE_IDS = {
+    "host": "21m00Tcm4TlvDq8ikWAM",  # Rachel
+    "co-host": "AZnzlk1XvdvUeBnXmlld",  # Domi
+    "guest": "EXAVITQu4vr4xnSDxMaL"  # Bella
+}
 
 @app.route('/api/generate-audio', methods=['POST'])
 def generate_audio():
@@ -134,8 +139,15 @@ def generate_audio():
         for i, line in enumerate(podcast['dialog']):
             print(f"Generating audio for line {i+1}/{len(podcast['dialog'])}")
             try:
+                # Determine voice based on speaker role
+                speaker_role = line['speaker'].lower()
+                voice_id = VOICE_IDS.get(
+                    'host' if 'host' in speaker_role else 
+                    'co-host' if 'co-host' in speaker_role else 'guest'
+                )
+
                 response = requests.post(
-                    ELEVENLABS_API_URL,
+                    f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
                     headers={
                         'xi-api-key': ELEVENLABS_API_KEY,
                         'Content-Type': 'application/json'
@@ -180,6 +192,11 @@ def generate_audio():
                 for part in audio_parts:
                     f.write(part)
             print(f"Saved audio file to {audio_path}")
+
+            # Update newsletter with audio URL
+            podcasts[podcast_index]['audio_url'] = f'/static/audio/{audio_filename}'
+            storage.update_newsletter_audio(podcasts[podcast_index]['id'], f'/static/audio/{audio_filename}')
+
         except Exception as e:
             print(f"Error saving audio file: {str(e)}")
             return jsonify({"error": f"Failed to save audio file: {str(e)}"}), 500
