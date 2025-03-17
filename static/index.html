@@ -286,9 +286,12 @@
         async function updateStatus() {
             const response = await fetch('/api/status');
             const messages = await response.json();
-            document.getElementById('status').innerHTML = messages
+            const statusBox = document.getElementById('status');
+            statusBox.innerHTML = messages
                 .map(m => `<div class="mb-1"><small class="text-muted">${formatDate(m.timestamp)}</small>: ${m.message}</div>`)
                 .join('');
+            // Auto scroll to bottom
+            statusBox.scrollTop = statusBox.scrollHeight;
         }
 
         // Load articles
