@@ -22,7 +22,10 @@ status_lock = threading.Lock()
 
 def add_status_message(message):
     with status_lock:
-        status_messages.append({"message": message, "timestamp": datetime.now().isoformat()})
+        status_messages.append({
+            "message": message,
+            "timestamp": datetime.now().isoformat()
+        })
         # Keep only last 100 messages
         if len(status_messages) > 100:
             status_messages.pop(0)
@@ -41,7 +44,10 @@ def add_url():
     url = request.json.get('url')
     if storage.add_url(url):
         return jsonify({"success": True, "message": "URL added successfully"})
-    return jsonify({"success": False, "message": "Invalid URL or already exists"})
+    return jsonify({
+        "success": False,
+        "message": "Invalid URL or already exists"
+    })
 
 @app.route('/api/urls/<path:url>', methods=['DELETE'])
 def remove_url(url):
@@ -117,22 +123,21 @@ def generate_audio():
         # Generate audio for each line of dialog
         audio_parts = []
         for line in podcast['dialog']:
-            response = requests.post(
-                ELEVENLABS_API_URL,
-                headers={
-                    'Authorization': f'Bearer {ELEVENLABS_API_KEY}',
-                    'Content-Type': 'application/json'
-                },
-                json={
-                    'text': line['text'],
-                    'model_id': 'eleven_monolingual_v1',
-                    'voice_settings': {
-                        'stability': 0.5,
-                        'similarity_boost': 0.5
-                    }
-                },
-                stream=True
-            )
+            response = requests.post(ELEVENLABS_API_URL,
+                                     headers={
+                                         'Authorization':
+                                         f'Bearer {ELEVENLABS_API_KEY}',
+                                         'Content-Type': 'application/json'
+                                     },
+                                     json={
+                                         'text': line['text'],
+                                         'model_id': 'eleven_multilingual_v2',
+                                         'voice_settings': {
+                                             'stability': 0.5,
+                                             'similarity_boost': 0.5
+                                         }
+                                     },
+                                     stream=True)
 
             if response.status_code != 200:
                 return jsonify({"error": "Failed to generate audio"}), 500
