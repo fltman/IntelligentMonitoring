@@ -43,6 +43,102 @@ ELEVENLABS_API_KEY=your_elevenlabs_api_key
 
 The application will automatically create the necessary database tables on first run. Make sure your PostgreSQL database is accessible using the provided DATABASE_URL.
 
+## Prompt Configuration
+
+The application uses several AI prompts for different purposes. Here's how to configure each type:
+
+### 1. Interest Prompt
+
+Used to filter articles based on relevance. The prompt should describe the topics and themes of interest.
+
+Example:
+```
+Focus on articles related to:
+- Artificial Intelligence and Machine Learning
+- Tech industry news and innovations
+- Startup ecosystem and funding
+- Developer tools and platforms
+
+Exclude:
+- General consumer tech reviews
+- Gaming news
+- Personal tech blogs
+```
+
+### 2. Summary Prompt
+
+Defines how articles should be summarized. Include specific instructions about length, style, and focus.
+
+Example:
+```
+Create a concise summary that:
+- Captures the main argument or finding
+- Includes key statistics or data points
+- Highlights industry implications
+- Keeps length between 2-3 paragraphs
+- Uses professional, objective tone
+- Avoids technical jargon
+```
+
+### 3. Newsletter Template
+
+Template for generating newsletters. Use markdown formatting and placeholders for dynamic content.
+
+Example:
+```markdown
+# Tech Insights Weekly
+${date}
+
+## Top Stories This Week
+
+${articles_summary}
+
+## Industry Analysis
+
+${analysis}
+
+## Quick Takes
+${quick_takes}
+
+---
+*Curated by AI, reviewed by humans. Stay informed!*
+```
+
+### 4. Podcast Studio Prompt
+
+Defines the podcast format, characters, and style. Must include host definitions with ElevenLabs voice IDs.
+
+Example:
+```json
+{
+  "podcast": {
+    "title": "TechTalk Weekly",
+    "episode": "42",
+    "theme": "The Future of AI in Daily Life",
+    "hosts": [
+      {
+        "name": "Alice Johnson",
+        "role": "Host",
+        "bio": "Tech journalist with 10 years of experience in AI research.",
+        "elevenlabs_voice_id": "21m00Tcm4TlvDq8ikWAM"
+      },
+      {
+        "name": "Bob Smith",
+        "role": "Co-Host",
+        "bio": "Software engineer and AI ethics advocate.",
+        "elevenlabs_voice_id": "AZnzlk1XvdvUeBnXmlld"
+      }
+    ],
+    "format": "Conversational discussion with:
+      - Opening introduction (30s)
+      - Main topic discussion (5-7min)
+      - Key points analysis (2-3min)
+      - Closing thoughts (1min)",
+    "style": "Professional but approachable, focus on making complex topics accessible"
+  }
+}
+```
+
 ## Running the Application
 
 1. Start the Flask server:
