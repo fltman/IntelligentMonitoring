@@ -110,6 +110,8 @@ Defines the podcast format and dialog structure with specific speakers and their
 
 Example:
 ```json
+create a podcast and return a json in this format. The dialog is an example, create a new one. 
+
 {
   "podcast": {
     "title": "TechTalk Weekly",
