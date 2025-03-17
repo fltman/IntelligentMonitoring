@@ -7,12 +7,27 @@ from urllib.parse import urljoin, urlparse
 import re
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from queue import Queue
+from threading import Lock
 
 class ArticleProcessor:
     def __init__(self):
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
         # do not change this unless explicitly requested by the user
         self.openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.status_queue = Queue()
+        self.status_lock = Lock()
+
+    def _update_status(self, message, status_callback=None):
+        """Thread-safe status update"""
+        with self.status_lock:
+            print(message)
+            if status_callback:
+                try:
+                    status_callback(message)
+                except Exception:
+                    # Ignore status update errors in threads
+                    pass
 
     def fetch_article(self, url):
         """Fetch and extract content from a URL"""
@@ -135,12 +150,10 @@ class ArticleProcessor:
         except Exception as e:
             raise Exception(f"Failed to summarize article: {str(e)}")
 
-    def process_single_article(self, article_url, interest_prompt, summary_prompt, status_callback=None):
+    def process_single_article(self, article_url, interest_prompt, summary_prompt):
         """Process a single article URL"""
         try:
-            if status_callback:
-                status_callback(f"Kontrollerar artikel: {article_url}")
-            print(f"Checking article: {article_url}")
+            self._update_status(f"Kontrollerar artikel: {article_url}")
 
             article_content, _ = self.fetch_article(article_url)  # Ignore nested links
             relevant, reason = self.check_relevance(article_content, interest_prompt)
@@ -154,25 +167,16 @@ class ArticleProcessor:
                     "processed_date": datetime.now().isoformat(),
                     "content": article_content
                 }
-                msg = f"Hittade relevant artikel: {title}"
-                if status_callback:
-                    status_callback(msg)
-                print(f"Found relevant article: {title}")
+                self._update_status(f"Hittade relevant artikel: {title}")
                 return result
             return None
         except Exception as e:
-            msg = f"Fel vid bearbetning av artikel {article_url}: {str(e)}"
-            if status_callback:
-                status_callback(msg)
-            print(f"Error processing article {article_url}: {str(e)}")
+            self._update_status(f"Fel vid bearbetning av artikel {article_url}: {str(e)}")
             return None
 
-    def process_article(self, url, interest_prompt, summary_prompt,
-                       status_callback=None):
+    def process_article(self, url, interest_prompt, summary_prompt, status_callback=None):
         """Process an article through the complete pipeline"""
-        if status_callback:
-            status_callback(f"Hämtar innehåll från: {url}")
-        print(f"Processing URL: {url}")
+        self._update_status(f"Hämtar innehåll från: {url}", status_callback)
         content, article_links = self.fetch_article(url)
         processed_articles = []
 
@@ -188,34 +192,32 @@ class ArticleProcessor:
                 "processed_date": datetime.now().isoformat(),
                 "content": content
             })
-            msg = f"Hittade relevant innehåll på huvudsidan: {title}"
-            if status_callback:
-                status_callback(msg)
-            print(f"Found relevant content on main page: {title}")
+            self._update_status(
+                f"Hittade relevant innehåll på huvudsidan: {title}", status_callback)
 
         # Process extracted article links in parallel
         if article_links:
-            msg = f"Hittade {len(article_links)} potentiella artikellänkar"
-            if status_callback:
-                status_callback(msg)
-            print(f"Found {len(article_links)} potential article links")
+            self._update_status(
+                f"Hittade {len(article_links)} potentiella artikellänkar", status_callback)
 
             # Process articles in parallel with max 5 workers
             with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_url = {
-                    executor.submit(
-                        self.process_single_article,
-                        article_url,
-                        interest_prompt,
-                        summary_prompt,
-                        status_callback
-                    ): article_url
-                    for article_url in article_links
-                }
+                futures = []
+                for article_url in article_links:
+                    futures.append(
+                        executor.submit(
+                            self.process_single_article,
+                            article_url,
+                            interest_prompt,
+                            summary_prompt
+                        )
+                    )
 
-                for future in as_completed(future_to_url):
+                for future in as_completed(futures):
                     result = future.result()
                     if result:
                         processed_articles.append(result)
+                        self._update_status(
+                            f"Bearbetat artikel: {result['title']}", status_callback)
 
         return processed_articles
