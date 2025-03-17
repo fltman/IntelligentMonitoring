@@ -26,17 +26,17 @@ def process_urls(status_callback=None):
     for url in urls:
         try:
             if status_callback:
-                status_callback(f"Processing source: {url}")
+                status_callback(f"Bearbetar källa: {url}")
             print(f"\nProcessing source: {url}")
             # Process main page and its article links
-            articles = processor.process_article(url, interest_prompt, summary_prompt)
+            articles = processor.process_article(url, interest_prompt, summary_prompt, status_callback)
 
             for article in articles:
                 # Only check duplicates for article URLs, not source URLs
                 with storage.conn.cursor() as cur:
                     cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (article["url"],))
                     if cur.fetchone():
-                        msg = f"Skipping duplicate article: {article['url']}"
+                        msg = f"Hoppar över duplicerad artikel: {article['url']}"
                         if status_callback:
                             status_callback(msg)
                         print(msg)
@@ -44,13 +44,13 @@ def process_urls(status_callback=None):
 
                 # Save new article
                 storage.save_article(article)
-                msg = f"Found new article: {article['title']}"
+                msg = f"Sparade ny artikel: {article['title']}"
                 if status_callback:
                     status_callback(msg)
                 print(msg)
 
         except Exception as e:
-            error_msg = f"Error processing URL {url}: {str(e)}"
+            error_msg = f"Fel vid bearbetning av URL {url}: {str(e)}"
             if status_callback:
                 status_callback(error_msg)
             print(error_msg)

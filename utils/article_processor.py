@@ -139,8 +139,11 @@ class ArticleProcessor:
         except Exception as e:
             raise Exception(f"Failed to summarize article: {str(e)}")
 
-    def process_article(self, url, interest_prompt, summary_prompt):
+    def process_article(self, url, interest_prompt, summary_prompt,
+                       status_callback=None):
         """Process an article through the complete pipeline"""
+        if status_callback:
+            status_callback(f"Hämtar innehåll från: {url}")
         print(f"Processing URL: {url}")
         content, article_links = self.fetch_article(url)
         processed_articles = []
@@ -162,36 +165,52 @@ class ArticleProcessor:
                 "content":
                 content
             })
+            msg = f"Hittade relevant innehåll på huvudsidan: {title}"
+            if status_callback:
+                status_callback(msg)
             print(f"Found relevant content on main page: {title}")
 
         # Process extracted article links
-        print(f"Found {len(article_links)} potential article links")
-        for article_url in article_links:
-            try:
-                print(f"Checking article: {article_url}")
-                article_content, _ = self.fetch_article(
-                    article_url)  # Ignore nested links
-                relevant, reason = self.check_relevance(
-                    article_content, interest_prompt)
+        if article_links:
+            msg = f"Hittade {len(article_links)} potentiella artikellänkar"
+            if status_callback:
+                status_callback(msg)
+            print(f"Found {len(article_links)} potential article links")
 
-                if relevant:
-                    title, summary = self.summarize_article(
-                        article_content, summary_prompt)
-                    processed_articles.append({
-                        "url":
-                        article_url,
-                        "title":
-                        title,
-                        "summary":
-                        summary,
-                        "processed_date":
-                        datetime.now().isoformat(),
-                        "content":
-                        article_content
-                    })
-                    print(f"Found relevant article: {title}")
-            except Exception as e:
-                print(f"Error processing article {article_url}: {str(e)}")
-                continue
+            for article_url in article_links:
+                try:
+                    if status_callback:
+                        status_callback(f"Kontrollerar artikel: {article_url}")
+                    print(f"Checking article: {article_url}")
+                    article_content, _ = self.fetch_article(
+                        article_url)  # Ignore nested links
+                    relevant, reason = self.check_relevance(
+                        article_content, interest_prompt)
+
+                    if relevant:
+                        title, summary = self.summarize_article(
+                            article_content, summary_prompt)
+                        processed_articles.append({
+                            "url":
+                            article_url,
+                            "title":
+                            title,
+                            "summary":
+                            summary,
+                            "processed_date":
+                            datetime.now().isoformat(),
+                            "content":
+                            article_content
+                        })
+                        msg = f"Hittade relevant artikel: {title}"
+                        if status_callback:
+                            status_callback(msg)
+                        print(f"Found relevant article: {title}")
+                except Exception as e:
+                    msg = f"Fel vid bearbetning av artikel {article_url}: {str(e)}"
+                    if status_callback:
+                        status_callback(msg)
+                    print(f"Error processing article {article_url}: {str(e)}")
+                    continue
 
         return processed_articles
