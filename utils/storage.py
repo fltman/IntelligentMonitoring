@@ -1,43 +1,70 @@
-import json
 import os
+import json
 from datetime import datetime
 import urllib.parse
+import psycopg2
+from psycopg2.extras import DictCursor
 
 class Storage:
     def __init__(self):
-        # Create necessary directories
-        os.makedirs("data", exist_ok=True)
-        os.makedirs("data/articles", exist_ok=True)
-        os.makedirs("data/newsletters", exist_ok=True)
-        
-        self.settings_file = "data/settings.json"
-        self.urls_file = "data/urls.json"
-        
-        # Initialize storage files if they don't exist
-        if not os.path.exists(self.settings_file):
-            self._save_json(self.settings_file, {})
-        if not os.path.exists(self.urls_file):
-            self._save_json(self.urls_file, [])
+        self.conn = psycopg2.connect(os.getenv('DATABASE_URL'))
+        self.create_tables()
 
-    def _load_json(self, file_path):
-        try:
-            with open(file_path, 'r') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return None
+    def create_tables(self):
+        with self.conn.cursor() as cur:
+            # Settings table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )
+            """)
 
-    def _save_json(self, file_path, data):
-        with open(file_path, 'w') as f:
-            json.dump(data, f, indent=2)
+            # URLs table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS urls (
+                    url TEXT PRIMARY KEY
+                )
+            """)
+
+            # Articles table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS articles (
+                    id SERIAL PRIMARY KEY,
+                    url TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    summary TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    processed_date TIMESTAMP NOT NULL
+                )
+            """)
+
+            # Newsletters table
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS newsletters (
+                    id SERIAL PRIMARY KEY,
+                    date TIMESTAMP NOT NULL,
+                    content TEXT NOT NULL,
+                    articles JSONB NOT NULL
+                )
+            """)
+
+            self.conn.commit()
 
     def get_setting(self, key, default=""):
-        settings = self._load_json(self.settings_file)
-        return settings.get(key, default)
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
+            result = cur.fetchone()
+            return result[0] if result else default
 
     def save_setting(self, key, value):
-        settings = self._load_json(self.settings_file)
-        settings[key] = value
-        self._save_json(self.settings_file, settings)
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO settings (key, value) 
+                VALUES (%s, %s)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+            """, (key, value))
+            self.conn.commit()
 
     def add_url(self, url):
         try:
@@ -45,66 +72,82 @@ class Storage:
             result = urllib.parse.urlparse(url)
             if not all([result.scheme, result.netloc]):
                 return False
-                
-            urls = self._load_json(self.urls_file)
-            if url not in urls:
-                urls.append(url)
-                self._save_json(self.urls_file, urls)
+
+            with self.conn.cursor() as cur:
+                cur.execute("INSERT INTO urls (url) VALUES (%s) ON CONFLICT DO NOTHING", (url,))
+                self.conn.commit()
                 return True
-            return False
         except:
             return False
 
     def remove_url(self, url):
-        urls = self._load_json(self.urls_file)
-        if url in urls:
-            urls.remove(url)
-            self._save_json(self.urls_file, urls)
+        with self.conn.cursor() as cur:
+            cur.execute("DELETE FROM urls WHERE url = %s", (url,))
+            self.conn.commit()
 
     def get_urls(self):
-        return self._load_json(self.urls_file)
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT url FROM urls")
+            return [row[0] for row in cur.fetchall()]
 
     def save_article(self, article):
-        filename = f"data/articles/{article['processed_date']}.json"
-        self._save_json(filename, article)
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO articles (url, title, summary, content, processed_date)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                article['url'],
+                article['title'],
+                article['summary'],
+                article['content'],
+                article['processed_date']
+            ))
+            self.conn.commit()
 
     def get_recent_articles(self, limit=10):
-        articles = []
-        try:
-            files = sorted(os.listdir("data/articles"), reverse=True)
-            for file in files[:limit]:
-                article = self._load_json(os.path.join("data/articles", file))
-                if article:
-                    articles.append(article)
-        except Exception:
-            pass
-        return articles
+        with self.conn.cursor(cursor_factory=DictCursor) as cur:
+            cur.execute("""
+                SELECT url, title, summary, processed_date 
+                FROM articles 
+                ORDER BY processed_date DESC 
+                LIMIT %s
+            """, (limit,))
+            return [dict(row) for row in cur.fetchall()]
 
     def save_newsletter(self, newsletter):
-        filename = f"data/newsletters/{newsletter['date']}.json"
-        self._save_json(filename, newsletter)
+        with self.conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO newsletters (date, content, articles)
+                VALUES (%s, %s, %s)
+            """, (
+                newsletter['date'],
+                newsletter['content'],
+                json.dumps(newsletter['articles'])
+            ))
+            self.conn.commit()
 
     def get_newsletters(self, search_term=None):
-        newsletters = []
-        try:
-            files = sorted(os.listdir("data/newsletters"), reverse=True)
-            for file in files:
-                newsletter = self._load_json(os.path.join("data/newsletters", file))
-                if newsletter:
-                    if not search_term or search_term.lower() in newsletter['content'].lower():
-                        newsletters.append(newsletter)
-        except Exception:
-            pass
-        return newsletters
+        with self.conn.cursor(cursor_factory=DictCursor) as cur:
+            if search_term:
+                cur.execute("""
+                    SELECT date, content, articles 
+                    FROM newsletters 
+                    WHERE content ILIKE %s 
+                    ORDER BY date DESC
+                """, (f'%{search_term}%',))
+            else:
+                cur.execute("""
+                    SELECT date, content, articles 
+                    FROM newsletters 
+                    ORDER BY date DESC
+                """)
+            return [dict(row) for row in cur.fetchall()]
 
     def get_unprocessed_articles(self, since_date):
-        articles = []
-        try:
-            files = os.listdir("data/articles")
-            for file in files:
-                article = self._load_json(os.path.join("data/articles", file))
-                if article and article['processed_date'] > since_date:
-                    articles.append(article)
-        except Exception:
-            pass
-        return articles
+        with self.conn.cursor(cursor_factory=DictCursor) as cur:
+            cur.execute("""
+                SELECT * FROM articles 
+                WHERE processed_date > %s 
+                ORDER BY processed_date DESC
+            """, (since_date,))
+            return [dict(row) for row in cur.fetchall()]

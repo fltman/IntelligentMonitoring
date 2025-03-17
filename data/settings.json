@@ -1,1 +1,5 @@
-{}
+{
+  "interest_prompt": "AI",
+  "summary_prompt": "summarize articles in one paragraph and three bullets.",
+  "newsletter_template": "combine related articles into sections."
+}
