@@ -165,6 +165,7 @@ class Storage:
                         SELECT date, content, articles, podcast_script
                         FROM news_newsletters 
                         ORDER BY date DESC
+                        LIMIT 10
                     """)
                 return [dict(row) for row in cur.fetchall()]
 
