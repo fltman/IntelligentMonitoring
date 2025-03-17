@@ -155,14 +155,14 @@ class Storage:
             with conn.cursor(cursor_factory=DictCursor) as cur:
                 if search_term:
                     cur.execute("""
-                        SELECT date, content, articles, podcast_script
+                        SELECT id, date, content, articles, podcast_script, audio_url
                         FROM news_newsletters 
                         WHERE content ILIKE %s 
                         ORDER BY date DESC
                     """, (f'%{search_term}%',))
                 else:
                     cur.execute("""
-                        SELECT date, content, articles, podcast_script
+                        SELECT id, date, content, articles, podcast_script, audio_url
                         FROM news_newsletters 
                         ORDER BY date DESC
                         LIMIT 10
