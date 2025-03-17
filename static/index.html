@@ -103,15 +103,9 @@
                             <label class="form-label">Newsletter Template</label>
                             <textarea id="newsletterTemplate" class="form-control" rows="3"></textarea>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">URL Check Interval (hours)</label>
-                                <input type="number" id="checkInterval" class="form-control" min="1" max="24">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Newsletter Time</label>
-                                <input type="time" id="newsletterTime" class="form-control">
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Newsletter Time</label>
+                            <input type="time" id="newsletterTime" class="form-control">
                         </div>
                         <button onclick="saveSettings()" class="btn btn-primary">
                             <i class="bi bi-save me-2"></i>Save Settings
@@ -201,7 +195,6 @@
             document.getElementById('interestPrompt').value = settings.interest_prompt || '';
             document.getElementById('summaryPrompt').value = settings.summary_prompt || '';
             document.getElementById('newsletterTemplate').value = settings.newsletter_template || '';
-            document.getElementById('checkInterval').value = settings.url_check_interval || '1';
             document.getElementById('newsletterTime').value = settings.newsletter_time || '08:00';
         }
 
@@ -211,7 +204,6 @@
                 interest_prompt: document.getElementById('interestPrompt').value,
                 summary_prompt: document.getElementById('summaryPrompt').value,
                 newsletter_template: document.getElementById('newsletterTemplate').value,
-                url_check_interval: document.getElementById('checkInterval').value,
                 newsletter_time: document.getElementById('newsletterTime').value
             };
 

@@ -8,7 +8,7 @@ from utils.storage import Storage
 from utils.newsletter import NewsletterGenerator
 
 def process_urls(status_callback=None):
-    """Process all URLs and check for new articles"""
+    """Process all URLs and generate newsletter"""
     storage = Storage()
     processor = ArticleProcessor()
 
@@ -28,11 +28,11 @@ def process_urls(status_callback=None):
         """Process a single URL and its articles"""
         try:
             if status_callback:
-                status_callback(f"Bearbetar källa: {url}")
+                status_callback(f"Processing source: {url}")
             print(f"\nProcessing source: {url}")
             return processor.process_article(url, interest_prompt, summary_prompt, status_callback)
         except Exception as e:
-            error_msg = f"Fel vid bearbetning av URL {url}: {str(e)}"
+            error_msg = f"Error processing URL {url}: {str(e)}"
             if status_callback:
                 status_callback(error_msg)
             print(error_msg)
@@ -48,28 +48,29 @@ def process_urls(status_callback=None):
             if articles:
                 for article in articles:
                     # Check for duplicates
-                    with storage.conn.cursor() as cur:
-                        cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (article["url"],))
-                        if cur.fetchone():
-                            msg = f"Hoppar över duplicerad artikel: {article['url']}"
-                            if status_callback:
-                                status_callback(msg)
-                            print(msg)
-                            continue
+                    with storage.get_conn() as conn:
+                        with conn.cursor() as cur:
+                            cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (article["url"],))
+                            if cur.fetchone():
+                                msg = f"Skipping duplicate article: {article['url']}"
+                                if status_callback:
+                                    status_callback(msg)
+                                print(msg)
+                                continue
 
                     # Save new article
                     storage.save_article(article)
-                    msg = f"Sparade ny artikel: {article['title']}"
+                    msg = f"Saved new article: {article['title']}"
                     if status_callback:
                         status_callback(msg)
                     print(msg)
 
     # Generate newsletter after processing all URLs
     if status_callback:
-        status_callback("Genererar nyhetsbrev...")
+        status_callback("Generating newsletter...")
     generate_daily_newsletter()
     if status_callback:
-        status_callback("Nyhetsbrev genererat!")
+        status_callback("Newsletter generated!")
 
 def generate_daily_newsletter():
     """Generate the daily newsletter"""
@@ -97,22 +98,19 @@ def generate_daily_newsletter():
 # Store the current scheduler thread to be able to stop it
 current_scheduler_thread = None
 
-def run_scheduler(check_interval, newsletter_time):
+def run_scheduler(newsletter_time):
     """Run the scheduler continuously"""
     # Clear any existing jobs
     schedule.clear()
 
-    # Process URLs at specified interval
-    schedule.every(check_interval).hours.do(process_urls)
-
     # Generate newsletter at specified time
-    schedule.every().day.at(newsletter_time).do(generate_daily_newsletter)
+    schedule.every().day.at(newsletter_time).do(process_urls)
 
     while True:
         schedule.run_pending()
         time.sleep(60)
 
-def start_scheduler(check_interval=1, newsletter_time="08:00"):
+def start_scheduler(newsletter_time="08:00"):
     """Start or restart the scheduler with new settings"""
     global current_scheduler_thread
 
@@ -124,8 +122,8 @@ def start_scheduler(check_interval=1, newsletter_time="08:00"):
     # Start new scheduler thread
     current_scheduler_thread = threading.Thread(
         target=run_scheduler,
-        args=(check_interval, newsletter_time),
+        args=(newsletter_time,),
         daemon=True
     )
     current_scheduler_thread.start()
-    print(f"Started scheduler: checking URLs every {check_interval} hours, newsletter at {newsletter_time}")
+    print(f"Started scheduler: generating newsletter at {newsletter_time}")

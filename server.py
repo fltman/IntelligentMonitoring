@@ -78,7 +78,6 @@ def get_settings():
         "interest_prompt": storage.get_setting("interest_prompt"),
         "summary_prompt": storage.get_setting("summary_prompt"),
         "newsletter_template": storage.get_setting("newsletter_template"),
-        "url_check_interval": storage.get_setting("url_check_interval"),
         "newsletter_time": storage.get_setting("newsletter_time")
     })
 
@@ -89,18 +88,15 @@ def save_settings():
         storage.save_setting(key, str(value))
 
     # Restart scheduler with new settings
-    start_scheduler(
-        int(settings.get('url_check_interval', 1)),
-        settings.get('newsletter_time', '08:00')
-    )
+    newsletter_time = settings.get('newsletter_time', '08:00')
+    start_scheduler(newsletter_time)
 
     return jsonify({"success": True})
 
 if __name__ == '__main__':
     # Start scheduler with initial settings
-    url_check_interval = int(storage.get_setting("url_check_interval", "1"))
     newsletter_time = storage.get_setting("newsletter_time", "08:00")
-    start_scheduler(url_check_interval, newsletter_time)
+    start_scheduler(newsletter_time)
 
     # Run Flask app
     app.run(host='0.0.0.0', port=5000)
