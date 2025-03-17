@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>News Monitor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            height: 200px;
+            overflow-y: auto;
+        }
+        .article {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .settings {
+            background: #f9f9f9;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>News Monitoring System</h1>
+    
+    <div class="settings">
+        <h2>Settings</h2>
+        <div>
+            <label>Interest Prompt:</label><br>
+            <textarea id="interestPrompt"></textarea>
+        </div>
+        <div>
+            <label>Summary Prompt:</label><br>
+            <textarea id="summaryPrompt"></textarea>
+        </div>
+        <div>
+            <label>Newsletter Template:</label><br>
+            <textarea id="newsletterTemplate"></textarea>
+        </div>
+        <div>
+            <label>URL Check Interval (hours):</label><br>
+            <input type="number" id="checkInterval" min="1" max="24">
+        </div>
+        <div>
+            <label>Newsletter Time:</label><br>
+            <input type="time" id="newsletterTime">
+        </div>
+        <button onclick="saveSettings()">Save Settings</button>
+    </div>
+
+    <div>
+        <h2>URL Management</h2>
+        <input type="text" id="newUrl" placeholder="Enter URL">
+        <button onclick="addUrl()">Add URL</button>
+        <button onclick="startProcessing()">Process URLs Now</button>
+        <div id="urlList"></div>
+    </div>
+
+    <div>
+        <h2>Processing Status</h2>
+        <div id="status" class="status"></div>
+    </div>
+
+    <div>
+        <h2>Recent Articles</h2>
+        <div id="articles"></div>
+    </div>
+
+    <div>
+        <h2>Newsletters</h2>
+        <input type="text" id="searchTerm" onkeyup="searchNewsletters()" placeholder="Search newsletters">
+        <div id="newsletters"></div>
+    </div>
+
+    <script>
+        // Load settings
+        async function loadSettings() {
+            const response = await fetch('/api/settings');
+            const settings = await response.json();
+            document.getElementById('interestPrompt').value = settings.interest_prompt || '';
+            document.getElementById('summaryPrompt').value = settings.summary_prompt || '';
+            document.getElementById('newsletterTemplate').value = settings.newsletter_template || '';
+            document.getElementById('checkInterval').value = settings.url_check_interval || '1';
+            document.getElementById('newsletterTime').value = settings.newsletter_time || '08:00';
+        }
+
+        // Save settings
+        async function saveSettings() {
+            const settings = {
+                interest_prompt: document.getElementById('interestPrompt').value,
+                summary_prompt: document.getElementById('summaryPrompt').value,
+                newsletter_template: document.getElementById('newsletterTemplate').value,
+                url_check_interval: document.getElementById('checkInterval').value,
+                newsletter_time: document.getElementById('newsletterTime').value
+            };
+
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(settings)
+            });
+
+            alert('Settings saved!');
+        }
+
+        // URL management
+        async function loadUrls() {
+            const response = await fetch('/api/urls');
+            const urls = await response.json();
+            const urlList = document.getElementById('urlList');
+            urlList.innerHTML = urls.map(url => 
+                `<div>${url} <button onclick="removeUrl('${url}')">Remove</button></div>`
+            ).join('');
+        }
+
+        async function addUrl() {
+            const url = document.getElementById('newUrl').value;
+            await fetch('/api/urls', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url})
+            });
+            document.getElementById('newUrl').value = '';
+            loadUrls();
+        }
+
+        async function removeUrl(url) {
+            await fetch(`/api/urls/${encodeURIComponent(url)}`, {method: 'DELETE'});
+            loadUrls();
+        }
+
+        // Processing
+        async function startProcessing() {
+            await fetch('/api/process', {method: 'POST'});
+        }
+
+        // Status updates
+        async function updateStatus() {
+            const response = await fetch('/api/status');
+            const messages = await response.json();
+            document.getElementById('status').innerHTML = messages
+                .map(m => `<div>${m.timestamp}: ${m.message}</div>`)
+                .join('');
+        }
+
+        // Load articles
+        async function loadArticles() {
+            const response = await fetch('/api/articles');
+            const articles = await response.json();
+            document.getElementById('articles').innerHTML = articles.map(article => `
+                <div class="article">
+                    <h3>${article.title}</h3>
+                    <p>Source: <a href="${article.url}" target="_blank">${article.url}</a></p>
+                    <p>Processed: ${article.processed_date}</p>
+                    <p>${article.summary}</p>
+                </div>
+            `).join('');
+        }
+
+        // Load newsletters
+        async function loadNewsletters(search = '') {
+            const response = await fetch(`/api/newsletters${search ? `?search=${search}` : ''}`);
+            const newsletters = await response.json();
+            document.getElementById('newsletters').innerHTML = newsletters.map(newsletter => `
+                <div class="article">
+                    <h3>Newsletter - ${newsletter.date}</h3>
+                    <pre>${newsletter.content}</pre>
+                </div>
+            `).join('');
+        }
+
+        let searchTimeout;
+        function searchNewsletters() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const search = document.getElementById('searchTerm').value;
+                loadNewsletters(search);
+            }, 300);
+        }
+
+        // Initialize
+        loadSettings();
+        loadUrls();
+        loadArticles();
+        loadNewsletters();
+
+        // Regular updates
+        setInterval(updateStatus, 1000);
+        setInterval(loadArticles, 30000);
+    </script>
+</body>
+</html>
