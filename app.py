@@ -73,23 +73,22 @@ def main():
     with tab1:
         st.header("URL Management")
 
-        # Status container for processing feedback
-        status_container = st.empty()
-
         # Check URLs button
         if st.button("Process URLs and Generate Newsletter"):
-            with st.spinner("Processing URLs and generating newsletter..."):
-                # Create a status container
-                status = st.status("Processing URLs...")
+            placeholder = st.empty()
+            status = st.status("Processing URLs...")
 
-                def status_callback(message):
-                    status.update(label=message)
+            def status_callback(message):
+                # Use placeholder to show latest status
+                placeholder.write(message)
+                # Update status label
+                status.update(label=message)
 
-                try:
-                    process_urls(status_callback)
-                    status.update(label="Newsletter generated and updates completed!", state="complete")
-                except Exception as e:
-                    status.update(label=f"Error: {str(e)}", state="error")
+            try:
+                process_urls(status_callback)
+                status.update(label="Newsletter generated and updates completed!", state="complete")
+            except Exception as e:
+                status.update(label=f"Error: {str(e)}", state="error")
 
         st.divider()
 
