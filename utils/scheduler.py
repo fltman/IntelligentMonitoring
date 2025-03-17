@@ -22,15 +22,16 @@ def process_urls():
 
     for url in urls:
         try:
+            print(f"\nProcessing source: {url}")
             # Process main page and its article links
             articles = processor.process_article(url, interest_prompt, summary_prompt)
 
             for article in articles:
-                # Check if article already exists
+                # Only check duplicates for article URLs, not source URLs
                 with storage.conn.cursor() as cur:
                     cur.execute("SELECT 1 FROM news_articles WHERE url = %s", (article["url"],))
                     if cur.fetchone():
-                        print(f"Article already exists: {article['url']}")
+                        print(f"Skipping duplicate article: {article['url']}")
                         continue
 
                 # Save new article
