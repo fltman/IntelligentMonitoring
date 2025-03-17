@@ -56,6 +56,13 @@ def process_urls(status_callback=None):
             print(error_msg)
             continue
 
+    # Generate newsletter after processing all URLs
+    if status_callback:
+        status_callback("Genererar nyhetsbrev...")
+    generate_daily_newsletter()
+    if status_callback:
+        status_callback("Nyhetsbrev genererat!")
+
 def generate_daily_newsletter():
     """Generate the daily newsletter"""
     storage = Storage()

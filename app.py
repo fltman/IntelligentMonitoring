@@ -76,31 +76,20 @@ def main():
         # Status container for processing feedback
         status_container = st.empty()
 
-        # Manual run buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Check URLs Now"):
-                with st.spinner("Checking URLs for new content..."):
-                    # Create a status container
-                    status = st.status("Processing URLs...")
+        # Check URLs button
+        if st.button("Process URLs and Generate Newsletter"):
+            with st.spinner("Processing URLs and generating newsletter..."):
+                # Create a status container
+                status = st.status("Processing URLs...")
 
-                    def status_callback(message):
-                        status.update(label=message)
+                def status_callback(message):
+                    status.update(label=message)
 
-                    try:
-                        process_urls(status_callback)
-                        status.update(label="URL check completed!", state="complete")
-                    except Exception as e:
-                        status.update(label=f"Error: {str(e)}", state="error")
-
-        with col2:
-            if st.button("Generate Newsletter Now"):
-                with st.spinner("Generating newsletter..."):
-                    try:
-                        generate_daily_newsletter()
-                        st.success("Newsletter generated!")
-                    except Exception as e:
-                        st.error(f"Error generating newsletter: {str(e)}")
+                try:
+                    process_urls(status_callback)
+                    status.update(label="Newsletter generated and updates completed!", state="complete")
+                except Exception as e:
+                    status.update(label=f"Error: {str(e)}", state="error")
 
         st.divider()
 
