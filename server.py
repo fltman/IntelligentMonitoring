@@ -34,6 +34,11 @@ def add_status_message(message):
 def index():
     return send_from_directory(app.static_folder, 'index.html')
 
+# Serve static audio files
+@app.route('/static/audio/<path:filename>')
+def serve_audio(filename):
+    return send_from_directory(os.path.join(app.static_folder, 'audio'), filename)
+
 @app.route('/api/urls', methods=['GET'])
 def get_urls():
     return jsonify(storage.get_urls())
