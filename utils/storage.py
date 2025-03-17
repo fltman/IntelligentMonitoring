@@ -14,7 +14,7 @@ class Storage:
         with self.conn.cursor() as cur:
             # Settings table
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS settings (
+                CREATE TABLE IF NOT EXISTS app_settings (
                     key TEXT PRIMARY KEY,
                     value TEXT
                 )
@@ -22,14 +22,14 @@ class Storage:
 
             # URLs table
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS urls (
+                CREATE TABLE IF NOT EXISTS monitored_urls (
                     url TEXT PRIMARY KEY
                 )
             """)
 
             # Articles table
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS articles (
+                CREATE TABLE IF NOT EXISTS news_articles (
                     id SERIAL PRIMARY KEY,
                     url TEXT NOT NULL,
                     title TEXT NOT NULL,
@@ -41,7 +41,7 @@ class Storage:
 
             # Newsletters table
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS newsletters (
+                CREATE TABLE IF NOT EXISTS news_newsletters (
                     id SERIAL PRIMARY KEY,
                     date TIMESTAMP NOT NULL,
                     content TEXT NOT NULL,
@@ -53,14 +53,14 @@ class Storage:
 
     def get_setting(self, key, default=""):
         with self.conn.cursor() as cur:
-            cur.execute("SELECT value FROM settings WHERE key = %s", (key,))
+            cur.execute("SELECT value FROM app_settings WHERE key = %s", (key,))
             result = cur.fetchone()
             return result[0] if result else default
 
     def save_setting(self, key, value):
         with self.conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO settings (key, value) 
+                INSERT INTO app_settings (key, value) 
                 VALUES (%s, %s)
                 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
             """, (key, value))
@@ -74,7 +74,7 @@ class Storage:
                 return False
 
             with self.conn.cursor() as cur:
-                cur.execute("INSERT INTO urls (url) VALUES (%s) ON CONFLICT DO NOTHING", (url,))
+                cur.execute("INSERT INTO monitored_urls (url) VALUES (%s) ON CONFLICT DO NOTHING", (url,))
                 self.conn.commit()
                 return True
         except:
@@ -82,18 +82,18 @@ class Storage:
 
     def remove_url(self, url):
         with self.conn.cursor() as cur:
-            cur.execute("DELETE FROM urls WHERE url = %s", (url,))
+            cur.execute("DELETE FROM monitored_urls WHERE url = %s", (url,))
             self.conn.commit()
 
     def get_urls(self):
         with self.conn.cursor() as cur:
-            cur.execute("SELECT url FROM urls")
+            cur.execute("SELECT url FROM monitored_urls")
             return [row[0] for row in cur.fetchall()]
 
     def save_article(self, article):
         with self.conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO articles (url, title, summary, content, processed_date)
+                INSERT INTO news_articles (url, title, summary, content, processed_date)
                 VALUES (%s, %s, %s, %s, %s)
             """, (
                 article['url'],
@@ -108,7 +108,7 @@ class Storage:
         with self.conn.cursor(cursor_factory=DictCursor) as cur:
             cur.execute("""
                 SELECT url, title, summary, processed_date 
-                FROM articles 
+                FROM news_articles 
                 ORDER BY processed_date DESC 
                 LIMIT %s
             """, (limit,))
@@ -117,7 +117,7 @@ class Storage:
     def save_newsletter(self, newsletter):
         with self.conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO newsletters (date, content, articles)
+                INSERT INTO news_newsletters (date, content, articles)
                 VALUES (%s, %s, %s)
             """, (
                 newsletter['date'],
@@ -131,14 +131,14 @@ class Storage:
             if search_term:
                 cur.execute("""
                     SELECT date, content, articles 
-                    FROM newsletters 
+                    FROM news_newsletters 
                     WHERE content ILIKE %s 
                     ORDER BY date DESC
                 """, (f'%{search_term}%',))
             else:
                 cur.execute("""
                     SELECT date, content, articles 
-                    FROM newsletters 
+                    FROM news_newsletters 
                     ORDER BY date DESC
                 """)
             return [dict(row) for row in cur.fetchall()]
@@ -146,7 +146,7 @@ class Storage:
     def get_unprocessed_articles(self, since_date):
         with self.conn.cursor(cursor_factory=DictCursor) as cur:
             cur.execute("""
-                SELECT * FROM articles 
+                SELECT * FROM news_articles 
                 WHERE processed_date > %s 
                 ORDER BY processed_date DESC
             """, (since_date,))
