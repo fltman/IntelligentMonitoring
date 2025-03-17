@@ -1,0 +1,110 @@
+2.31.128.98 - - [17/Mar/2025 07:34:53] "GET /api/status HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:54] "GET /api/status HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:55] "GET /api/status HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:56] "GET /api/status HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:57] "GET /api/status HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET / HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET /api/status HTTP/1.1" 200 -
+[2025-03-17 07:34:58,448] ERROR in app: Exception on /api/settings [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/server.py", line 78, in get_settings
+    "interest_prompt": storage.get_setting("interest_prompt"),
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/utils/storage.py", line 55, in get_setting
+    with self.conn.cursor() as cur:
+         ^^^^^^^^^^^^^^^^^^
+psycopg2.InterfaceError: connection already closed
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET /api/settings HTTP/1.1" 500 -
+[2025-03-17 07:34:58,450] ERROR in app: Exception on /api/urls [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/server.py", line 35, in get_urls
+    return jsonify(storage.get_urls())
+                   ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/utils/storage.py", line 89, in get_urls
+    with self.conn.cursor() as cur:
+         ^^^^^^^^^^^^^^^^^^
+psycopg2.InterfaceError: connection already closed
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET /api/urls HTTP/1.1" 500 -
+[2025-03-17 07:34:58,618] ERROR in app: Exception on /api/newsletters [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/server.py", line 56, in get_newsletters
+    return jsonify(storage.get_newsletters(search if search else None))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/utils/storage.py", line 130, in get_newsletters
+    with self.conn.cursor(cursor_factory=DictCursor) as cur:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.InterfaceError: connection already closed
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET /api/newsletters HTTP/1.1" 500 -
+[2025-03-17 07:34:58,626] ERROR in app: Exception on /api/articles [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_cors/extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/server.py", line 51, in get_articles
+    return jsonify(storage.get_recent_articles())
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/utils/storage.py", line 108, in get_recent_articles
+    with self.conn.cursor(cursor_factory=DictCursor) as cur:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.InterfaceError: connection already closed
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET /api/articles HTTP/1.1" 500 -
+172.31.128.98 - - [17/Mar/2025 07:34:58] "GET /favicon.ico HTTP/1.1" 404 -
+172.31.128.98 - - [17/Mar/2025 07:34:59] "GET /api/status HTTP/1.1" 200 -
+172.31.128.98 - - [17/Mar/2025 07:34:59] "GET /api/status HTTP/1.1" 200 -
