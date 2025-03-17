@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 from urllib.parse import urljoin, urlparse
 import re
+from bs4 import BeautifulSoup
 
 class ArticleProcessor:
     def __init__(self):
@@ -16,34 +17,63 @@ class ArticleProcessor:
         """Fetch and extract content from a URL"""
         try:
             downloaded = trafilatura.fetch_url(url)
+            if not downloaded:
+                raise Exception("Could not download the content")
+
+            # Extract article links before extracting main content
+            article_links = self._extract_article_links(downloaded, url)
+
+            # Extract main content
             content = trafilatura.extract(downloaded)
             if not content:
                 raise Exception("No content could be extracted")
-            return content, self._extract_article_links(downloaded, url)
+
+            return content, article_links
         except Exception as e:
             raise Exception(f"Failed to fetch article: {str(e)}")
 
     def _extract_article_links(self, html_content, base_url):
         """Extract potential article links from HTML content"""
-        links = []
+        links = set()  # Use set to avoid duplicates
         try:
-            # Use trafilatura to extract links
-            links_data = trafilatura.extract_metadata(html_content)
-            if links_data and 'links' in links_data:
-                links.extend(links_data['links'])
+            # Parse HTML with BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Get links from common article containers
+            article_containers = soup.find_all(['article', 'div', 'section'], 
+                class_=lambda x: x and any(term in x.lower() 
+                    for term in ['article', 'post', 'story', 'news']))
+
+            # Extract links from article containers
+            for container in article_containers:
+                for a_tag in container.find_all('a', href=True):
+                    links.add(a_tag['href'])
+
+            # Also check for links in the main content area
+            main_content = soup.find(['main', 'div'], 
+                class_=lambda x: x and 'content' in x.lower())
+            if main_content:
+                for a_tag in main_content.find_all('a', href=True):
+                    links.add(a_tag['href'])
 
             # Clean and normalize links
             cleaned_links = []
             for link in links:
                 # Make relative URLs absolute
                 absolute_url = urljoin(base_url, link)
-
-                # Basic filtering for likely article URLs
                 parsed = urlparse(absolute_url)
-                if any(pattern in parsed.path.lower() for pattern in ['/article/', '/news/', '/story/']):
+
+                # Skip if not same domain or obvious non-article URLs
+                if not parsed.netloc or any(skip in parsed.path.lower() 
+                    for skip in ['/tag/', '/category/', '/author/', '/search/', '/page/']):
+                    continue
+
+                # Include if likely an article URL
+                if any(pattern in parsed.path.lower() 
+                    for pattern in ['/article/', '/news/', '/story/', '/post/', '/2024/', '/2025/']):
                     cleaned_links.append(absolute_url)
 
-            return list(set(cleaned_links))  # Remove duplicates
+            return list(set(cleaned_links))  # Remove any remaining duplicates
         except Exception as e:
             print(f"Warning: Error extracting links: {str(e)}")
             return []
@@ -90,11 +120,12 @@ class ArticleProcessor:
 
     def process_article(self, url, interest_prompt, summary_prompt):
         """Process an article through the complete pipeline"""
+        print(f"Processing URL: {url}")
         content, article_links = self.fetch_article(url)
+        processed_articles = []
 
         # First check if the main page content is relevant
         relevant, reason = self.check_relevance(content, interest_prompt)
-        processed_articles = []
 
         if relevant:
             title, summary = self.summarize_article(content, summary_prompt)
@@ -108,6 +139,7 @@ class ArticleProcessor:
             print(f"Found relevant content on main page: {title}")
 
         # Process extracted article links
+        print(f"Found {len(article_links)} potential article links")
         for article_url in article_links:
             try:
                 print(f"Checking article: {article_url}")
