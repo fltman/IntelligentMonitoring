@@ -103,7 +103,7 @@ def save_settings():
     return jsonify({"success": True})
 
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
-ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech"
+ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM"  # Using "Rachel" voice
 
 @app.route('/api/generate-audio', methods=['POST'])
 def generate_audio():
@@ -132,7 +132,7 @@ def generate_audio():
                 response = requests.post(
                     ELEVENLABS_API_URL,
                     headers={
-                        'Authorization': f'Bearer {ELEVENLABS_API_KEY}',
+                        'xi-api-key': ELEVENLABS_API_KEY,
                         'Content-Type': 'application/json'
                     },
                     json={
