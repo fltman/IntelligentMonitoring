@@ -108,12 +108,6 @@ def save_settings():
     return jsonify({"success": True})
 
 ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
-# Voice IDs for different speakers
-VOICE_IDS = {
-    "host": "21m00Tcm4TlvDq8ikWAM",  # Rachel
-    "co-host": "AZnzlk1XvdvUeBnXmlld",  # Domi
-    "guest": "EXAVITQu4vr4xnSDxMaL"  # Bella
-}
 
 @app.route('/api/generate-audio', methods=['POST'])
 def generate_audio():
@@ -134,17 +128,19 @@ def generate_audio():
         podcast = podcasts[podcast_index]['podcast_script']['podcast']
         print(f"Processing podcast: {podcast['title']}")
 
+        # Create mapping of speaker names to voice IDs
+        voice_mapping = {host['name']: host['elevenlabs_voice_id'] for host in podcast['hosts']}
+
         # Generate audio for each line of dialog
         audio_parts = []
         for i, line in enumerate(podcast['dialog']):
             print(f"Generating audio for line {i+1}/{len(podcast['dialog'])}")
             try:
-                # Determine voice based on speaker role
-                speaker_role = line['speaker'].lower()
-                voice_id = VOICE_IDS.get(
-                    'host' if 'host' in speaker_role else 
-                    'co-host' if 'co-host' in speaker_role else 'guest'
-                )
+                # Get voice ID for the current speaker
+                voice_id = voice_mapping.get(line['speaker'])
+                if not voice_id:
+                    print(f"No voice ID found for speaker: {line['speaker']}")
+                    return jsonify({"error": f"No voice ID found for speaker: {line['speaker']}"}), 500
 
                 response = requests.post(
                     f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
