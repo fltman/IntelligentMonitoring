@@ -1,4 +1,6 @@
-from flask import Flask, jsonify, request, send_from_directory
+import os
+import requests
+from flask import Flask, jsonify, request, send_from_directory, Response
 from flask_cors import CORS
 from utils.storage import Storage
 from utils.article_processor import ArticleProcessor
@@ -94,6 +96,70 @@ def save_settings():
     start_scheduler(newsletter_time)
 
     return jsonify({"success": True})
+
+ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
+ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/text-to-speech"
+
+@app.route('/api/generate-audio', methods=['POST'])
+def generate_audio():
+    try:
+        podcast_index = request.json.get('podcast_index')
+
+        # Get the most recent newsletter with a podcast script
+        newsletters = storage.get_newsletters()
+        podcasts = [n for n in newsletters if n.get('podcast_script')]
+
+        if podcast_index >= len(podcasts):
+            return jsonify({"error": "Podcast not found"}), 404
+
+        podcast = podcasts[podcast_index]['podcast_script']['podcast']
+
+        # Generate audio for each line of dialog
+        audio_parts = []
+        for line in podcast['dialog']:
+            response = requests.post(
+                ELEVENLABS_API_URL,
+                headers={
+                    'Authorization': f'Bearer {ELEVENLABS_API_KEY}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'text': line['text'],
+                    'model_id': 'eleven_monolingual_v1',
+                    'voice_settings': {
+                        'stability': 0.5,
+                        'similarity_boost': 0.5
+                    }
+                },
+                stream=True
+            )
+
+            if response.status_code != 200:
+                return jsonify({"error": "Failed to generate audio"}), 500
+
+            audio_parts.append(response.content)
+
+        # TODO: In a future update, we can combine audio parts and add effects
+        # For now, we'll just use the first part as a demo
+
+        # Save the audio file
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        audio_filename = f'podcast_{timestamp}.mp3'
+        audio_path = os.path.join(app.static_folder, 'audio', audio_filename)
+
+        # Ensure audio directory exists
+        os.makedirs(os.path.join(app.static_folder, 'audio'), exist_ok=True)
+
+        with open(audio_path, 'wb') as f:
+            f.write(audio_parts[0])
+
+        return jsonify({
+            "success": True,
+            "audio_url": f'/static/audio/{audio_filename}'
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     # Start scheduler with initial settings

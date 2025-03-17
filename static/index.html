@@ -329,6 +329,60 @@
             }
         }
 
+        // Toggle podcast script
+        function togglePodcast(id) {
+            const content = document.getElementById(`podcast-content-${id}`);
+            const button = document.getElementById(`toggle-podcast-btn-${id}`);
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+                button.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Show Script';
+            } else {
+                content.style.display = 'block';
+                button.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Hide Script';
+            }
+        }
+
+        //Generate Audio function 
+        async function generateAudio(index) {
+            const statusDiv = document.getElementById(`audio-status-${index}`);
+            statusDiv.innerHTML = '<div class="alert alert-info">Generating audio...</div>';
+
+            try {
+                const response = await fetch('/api/generate-audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        podcast_index: index
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate audio');
+                }
+
+                const data = await response.json();
+                statusDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <p class="mb-2">Audio generated successfully!</p>
+                        <audio controls class="w-100">
+                            <source src="${data.audio_url}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Failed to generate audio: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+
+
         // Load newsletters with podcast scripts
         async function loadNewsletters(search = '') {
             const response = await fetch(`/api/newsletters${search ? `?search=${search}` : ''}`);
@@ -362,7 +416,7 @@
             // Update podcasts container
             document.getElementById('podcastsContainer').innerHTML = newsletters
                 .filter(newsletter => newsletter.podcast_script)
-                .map(newsletter => {
+                .map((newsletter, index) => {
                     const podcast = newsletter.podcast_script.podcast;
                     return `
                         <div class="card mb-3">
@@ -374,23 +428,35 @@
                                 <small class="text-muted">${podcast.theme}</small>
                             </div>
                             <div class="card-body">
-                                <h6>Hosts:</h6>
-                                <div class="mb-3">
-                                    ${podcast.hosts.map(host => `
-                                        <div class="mb-2">
-                                            <strong>${host.name}</strong> (${host.role})
-                                            <p class="text-muted small mb-0">${host.bio}</p>
-                                        </div>
-                                    `).join('')}
+                                <div class="d-flex justify-content-end mb-3">
+                                    <button class="btn btn-outline-primary btn-sm me-2" id="toggle-podcast-btn-${index}" 
+                                            onclick="togglePodcast(${index})">
+                                        <i class="bi bi-chevron-down me-1"></i>Show Script
+                                    </button>
+                                    <button class="btn btn-success btn-sm" onclick="generateAudio(${index})">
+                                        <i class="bi bi-volume-up me-1"></i>Generate Audio
+                                    </button>
                                 </div>
-                                <h6>Script:</h6>
-                                <div class="script-content">
-                                    ${podcast.dialog.map(line => `
-                                        <div class="mb-2">
-                                            <strong class="text-primary">${line.speaker}:</strong>
-                                            <p class="mb-0">${line.text}</p>
-                                        </div>
-                                    `).join('')}
+                                <div class="podcast-content" id="podcast-content-${index}" style="display:none">
+                                    <h6>Hosts:</h6>
+                                    <div class="mb-3">
+                                        ${podcast.hosts.map(host => `
+                                            <div class="mb-2">
+                                                <strong>${host.name}</strong> (${host.role})
+                                                <p class="text-muted small mb-0">${host.bio}</p>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <h6>Script:</h6>
+                                    <div class="script-content">
+                                        ${podcast.dialog.map(line => `
+                                            <div class="mb-2">
+                                                <strong class="text-primary">${line.speaker}:</strong>
+                                                <p class="mb-0">${line.text}</p>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div id="audio-status-${index}" class="mt-3"></div>
                                 </div>
                             </div>
                         </div>

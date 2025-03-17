@@ -9,6 +9,7 @@ dependencies = [
     "flask-cors>=5.0.1",
     "openai>=1.66.3",
     "psycopg2-binary>=2.9.10",
+    "requests>=2.32.3",
     "schedule>=1.2.2",
     "trafilatura>=2.0.0",
 ]
